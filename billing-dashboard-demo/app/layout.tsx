@@ -7,6 +7,11 @@ export const metadata: Metadata = {
   title: 'Mawacon - Billing Dashboard',
   description: 'Professionelles Billing Dashboard für Unternehmen',
   generator: 'Mawacon',
+  icons: {
+    icon: '/mawacon-icon.png',
+    shortcut: '/mawacon-icon.png',
+    apple: '/mawacon-icon.png',
+  },
 }
 
 export default function RootLayout({
