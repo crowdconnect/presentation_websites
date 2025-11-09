@@ -106,4 +106,5 @@ npm start
 - Vercel handles rewrites via `vercel.json` in production
 - Each project maintains its own dependencies and configurations
 - All three apps can be deployed from the same repository
+- **Dependency Note:** The `.npmrc` file uses `legacy-peer-deps=true` to handle React 19 compatibility with some dependencies (like `vaul`). This is safe and commonly used for monorepos with mixed React versions.
 
