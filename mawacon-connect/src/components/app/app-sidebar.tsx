@@ -23,6 +23,7 @@ import {
   SidebarHeader,
   SidebarContent,
   SidebarFooter,
+  useSidebar,
 } from '@/components/ui/sidebar';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { user } from '@/lib/data';
@@ -40,11 +41,18 @@ const menuItems = [
 
 export function AppSidebar() {
   const pathname = usePathname();
+  const { setOpenMobile, isMobile } = useSidebar();
+
+  const handleLinkClick = () => {
+    if (isMobile) {
+      setOpenMobile(false);
+    }
+  };
 
   return (
     <Sidebar variant="inset" collapsible="icon">
       <SidebarHeader className="items-center justify-center group-data-[collapsible=icon]:hidden p-4">
-        <Link href="/dashboard">
+        <Link href="/dashboard" onClick={handleLinkClick}>
           <Image 
             src="/mawacon-logo.png" 
             alt="Mawacon Logo"
@@ -64,7 +72,7 @@ export function AppSidebar() {
                 isActive={pathname.startsWith(item.href)}
                 tooltip={{ children: item.label, side: 'right' }}
               >
-                <Link href={item.href}>
+                <Link href={item.href} onClick={handleLinkClick}>
                   {item.icon}
                   <span>{item.label}</span>
                 </Link>
@@ -82,7 +90,7 @@ export function AppSidebar() {
               className="justify-start"
               tooltip={{ children: user.name, side: 'right' }}
             >
-              <Link href="#">
+              <Link href="#" onClick={handleLinkClick}>
                 <Avatar className="size-8">
                     <AvatarImage src={`https://www.un.org/sites/un2.un.org/files/styles/banner-image-style-27-10/public/2025/06/horse-day-banner.pnghttps://www.zinnfigur.com/out/pictures/master/product/1/411_54893.jpghttps://www.zinnfigur.com/out/pictures/master/product/1/411_54893.jpg`} alt={user.name} />
                     <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>

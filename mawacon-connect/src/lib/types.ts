@@ -11,6 +11,10 @@ export interface Contract {
   priceAfter?: string;
   downloadSpeed: string;
   uploadSpeed: string;
+  landlinePhone?: string;
+  mobilePhone?: string;
+  contractTerm?: string;
+  features?: string[];
 }
 
 export interface Hardware {

@@ -2,27 +2,27 @@
   "placeholderImages": [
     {
       "id": "router",
-      "description": "A modern Wi-Fi router on a clean background.",
-      "imageUrl": "https://images.unsplash.com/photo-1606420187127-dae7c868fa7a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHxyb3V0ZXJ8ZW58MHx8fHwxNzYxNzk5NTE4fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "description": "Mawacon Premium Router - FritzBox Fiber",
+      "imageUrl": "/fritzbox-fiber.png",
       "imageHint": "router"
     },
     {
       "id": "repeater",
-      "description": "A sleek Wi-Fi repeater plugged into a wall.",
-      "imageUrl": "https://images.unsplash.com/photo-1616957348213-3dc21d6b06fb?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHx3aWZpJTIwcmVwZWF0ZXJ8ZW58MHx8fHwxNzYxODQ2NDQxfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "description": "Mawacon WiFi Booster",
+      "imageUrl": "/wifi-boost.webp",
       "imageHint": "wifi repeater"
     },
     {
       "id": "tv_stick",
-      "description": "A 4K streaming stick with a remote.",
-      "imageUrl": "https://images.unsplash.com/photo-1528928441742-b4ccac1bb04c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHx0diUyMHN0aWNrfGVufDB8fHx8MTc2MTg0NjQ0Mnww&ixlib=rb-4.1.0&q=80&w=1080",
+      "description": "waipu.tv 4K Streaming Stick",
+      "imageUrl": "/waipu.png",
       "imageHint": "tv stick"
     },
     {
       "id": "customer_referral",
-      "description": "Two people shaking hands.",
-      "imageUrl": "https://images.unsplash.com/photo-1758518730384-be3d205838e8?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHxoYW5kc2hha2UlMjBhZ3JlZW1lbnR8ZW58MHx8fHwxNzYxNzM4ODQwfDA&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "handshake agreement"
+      "description": "Freunde werben Freunde",
+      "imageUrl": "/friends.jpg",
+      "imageHint": "friends referral"
     }
   ]
 }

@@ -1,4 +1,8 @@
+'use client';
+
 import Link from 'next/link';
+import Image from 'next/image';
+import { useState } from 'react';
 import {
   Card,
   CardContent,
@@ -8,17 +12,56 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+} from '@/components/ui/dialog';
 import { user } from '@/lib/data';
 import { ArrowRight, Gift, Tv, FileSignature, Users } from 'lucide-react';
 import { PageHeader } from '@/components/app/page-header';
 
 export default function DashboardPage() {
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+
   return (
     <div className="space-y-8">
       <PageHeader
         title={`Willkommen zurück, ${user.name.split(' ')[0]}!`}
         description="Hier ist eine Übersicht über Ihr Konto."
       />
+
+      <div className="space-y-2">
+        <h2 className="text-2xl font-semibold text-primary">Aktion</h2>
+        <Card 
+          className="overflow-hidden cursor-pointer hover:opacity-90 transition-opacity border-primary border-2"
+          onClick={() => setIsDialogOpen(true)}
+        >
+          <div className="relative w-full aspect-[16/6]">
+            <Image
+              src="/ad.png"
+              alt="Werbung"
+              fill
+              sizes="100vw"
+              className="object-cover"
+            />
+          </div>
+        </Card>
+      </div>
+
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="max-w-full w-full max-h-[95vh] h-auto p-0 m-0 rounded-none">
+          <div className="relative w-full">
+            <Image
+              src="/ad.png"
+              alt="Werbung"
+              width={1920}
+              height={720}
+              className="w-full h-auto object-contain"
+              sizes="100vw"
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         <Card className="flex flex-col">
