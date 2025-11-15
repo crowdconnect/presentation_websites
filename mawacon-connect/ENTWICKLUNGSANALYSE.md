@@ -214,3 +214,4 @@ Die vorliegende Click-Dummy-App ist ein Next.js-basiertes Kundenportal für eine
 **Version**: 1.0
 **Status**: Vorläufige Schätzung - kann nach detaillierter Anforderungsanalyse angepasst werden
 
+

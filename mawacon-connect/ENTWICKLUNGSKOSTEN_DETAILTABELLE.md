@@ -178,3 +178,4 @@
 
 **Hinweis**: Diese Schätzungen basieren auf durchschnittlichen Marktpreisen in Deutschland. Die tatsächlichen Kosten können je nach Team, Technologie-Stack und spezifischen Anforderungen variieren.
 
+

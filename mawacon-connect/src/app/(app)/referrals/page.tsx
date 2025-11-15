@@ -32,17 +32,13 @@ export default function ReferralsPage() {
   const [copied, setCopied] = useState(false);
   const { toast } = useToast();
 
-  const referralLink = `www.mawacon.eu/friends/${referralCode}`;
-
-  const copyToClipboard = async (text: string, type: 'code' | 'link') => {
+  const copyToClipboard = async (text: string) => {
     try {
       await navigator.clipboard.writeText(text);
       setCopied(true);
       toast({
-        title: type === 'code' ? 'Code kopiert!' : 'Link kopiert!',
-        description: type === 'code' 
-          ? 'Der Code wurde in die Zwischenablage kopiert.'
-          : 'Der Link wurde in die Zwischenablage kopiert.',
+        title: 'Code kopiert!',
+        description: 'Der Code wurde in die Zwischenablage kopiert.',
       });
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
@@ -54,12 +50,30 @@ export default function ReferralsPage() {
     }
   };
 
-  const handleShareCode = () => {
-    copyToClipboard(referralLink, 'link');
+  const handleShareCode = async () => {
+    const shareText = `Empfehle dir Mawacon! Verwende meinen Code: ${referralCode}\n\nwww.mawacon.eu/friends/${referralCode}`;
+    
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'Mawacon Empfehlungscode',
+          text: shareText,
+        });
+      } catch (err) {
+        // User hat das Teilen abgebrochen oder Fehler aufgetreten
+        if ((err as Error).name !== 'AbortError') {
+          // Fallback: Code in Zwischenablage kopieren
+          copyToClipboard(referralCode);
+        }
+      }
+    } else {
+      // Fallback für Browser ohne Share API
+      copyToClipboard(referralCode);
+    }
   };
 
   const handleCopyCode = () => {
-    copyToClipboard(referralCode, 'code');
+    copyToClipboard(referralCode);
   };
 
   return (

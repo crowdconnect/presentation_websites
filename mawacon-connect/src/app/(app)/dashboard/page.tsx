@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   Card,
   CardContent,
@@ -17,11 +18,12 @@ import {
   DialogContent,
 } from '@/components/ui/dialog';
 import { user } from '@/lib/data';
-import { ArrowRight, Gift, Tv, FileSignature, Users } from 'lucide-react';
+import { ArrowRight, Gift, Tv, FileSignature, Users, AlertTriangle } from 'lucide-react';
 import { PageHeader } from '@/components/app/page-header';
 
 export default function DashboardPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const router = useRouter();
 
   return (
     <div className="space-y-8">
@@ -53,12 +55,25 @@ export default function DashboardPage() {
           <div className="relative w-full">
             <Image
               src="/ad.png"
-              alt="Werbung"
+              alt="Aktion"
               width={1920}
               height={720}
               className="w-full h-auto object-contain"
               sizes="100vw"
             />
+          </div>
+          <div className="p-6 bg-background">
+            <Button 
+              className="w-full" 
+              size="lg"
+              onClick={() => {
+                setIsDialogOpen(false);
+                router.push('/contracts');
+              }}
+            >
+              Zur Aktion
+              <ArrowRight className="ml-2" />
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
@@ -135,6 +150,27 @@ export default function DashboardPage() {
             <Button asChild>
               <Link href="/referrals">
                 Jetzt Prämie sichern <Gift className="ml-2" />
+              </Link>
+            </Button>
+          </CardFooter>
+        </Card>
+
+        <Card className="flex flex-col border-destructive/50 bg-destructive/5">
+          <CardHeader>
+            <div className="flex items-center gap-3">
+              <AlertTriangle className="size-6 text-destructive" />
+              <CardTitle>Störung melden</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent className="flex-grow">
+            <p className="text-muted-foreground">
+              Haben Sie Probleme mit Ihrem Internet oder TV? Melden Sie eine Störung schnell und einfach.
+            </p>
+          </CardContent>
+          <CardFooter>
+            <Button asChild variant="outline" className="w-full">
+              <Link href="/support">
+                Störung melden <ArrowRight className="ml-2" />
               </Link>
             </Button>
           </CardFooter>
