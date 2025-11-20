@@ -1,203 +1,204 @@
-# Entwicklungs-Pakete: Mawacon Connect App
+ # Entwicklungs-Pakete: Mawacon Connect App (Finales Angebot – 10.000 € brutto)
 
-## Übersicht
+ ## Übersicht
+ Die Mawacon Connect App ermöglicht Kunden:
+ - Verträge zu verwalten
+ - Hardware zu bestellen
+ - TV-Pakete zu buchen
+ - Freunde zu werben
+ - Rechnungen einzusehen
+ - Support zu kontaktieren
 
-Diese App ermöglicht Kunden, ihre Verträge zu verwalten, Hardware zu bestellen, TV-Pakete zu buchen, Freunde zu werben und Rechnungen einzusehen. Alle Bestellungen werden per E-Mail an Mitarbeiter weitergeleitet, die dann die Abwicklung übernehmen.
+ Die App kommuniziert ausschließlich mit einem separaten **Public API Backend**, das:
+ - unabhängig vom Mawacon-Intranet ist
+ - seine Daten über einen **einseitigen Daten-Mirror (Push vom Intranet)** erhält
+ - ein **Admin-Panel** zur Konfiguration bietet
 
----
+ ---
 
-## Aufgabenpakete
+ # Aufgabenpakete (inkl. Architektur-Anpassungen)
+ Gesamtziel: Public Backend + React Native App + Admin UI  
+ Gesamtbudget: **10.000 € brutto**
 
-### **Paket 1: Mobile Apps (iOS & Android)**
-**Was der Kunde sieht:** Apps für iPhone und Android-Handys
+ ---
 
-**Was dazu gehört:**
-- App-Design und Benutzeroberfläche
-- Navigation durch die App
-- Dashboard-Übersicht
-- App Store Veröffentlichung (iOS & Android)
+ ## Paket 1: Mobile App (iOS & Android)
+ **Beschreibung:** Fertige App für iPhone und Android.
 
-**Aufwand:** 70 Stunden | **Kosten:** 6.300 €
+ **Leistungen:**
+ - React Native App
+ - Navigation & Grundstruktur
+ - Dashboard-Integration
+ - Kommunikation mit Public API
 
----
+ **Kosten:** **2.500 €**
 
-### **Paket 2: Dashboard & Startseite**
-**Was der Kunde sieht:** Übersichtsseite mit aktuellen Informationen und Aktionen
+ ---
 
-**Was dazu gehört:**
-- Willkommensseite mit persönlicher Ansprache
-- Aktuelle Vertragsinformationen anzeigen
-- Aktionsanzeigen (Banner mit Werbeaktionen - Bild kann einfach ausgetauscht werden)
-- Schnellzugriff auf wichtige Funktionen
-- Übersicht über TV-Paket und Hardware
+ ## Paket 2: Public API Backend (separater Docker-Container)
+ **Beschreibung:** Public API für alle App-Funktionen.
 
-**Aufwand:** 10 Stunden | **Kosten:** 900 €
+ **Leistungen:**
+ - Aufbau des API Servers
+ - Endpunkte für Login, Verträge, Rechnungen, Bestellungen
+ - Sicheres Token-Login & Passwort-Hashing
+ - Mirror-Endpunkte zur Datenübernahme
+ - Speicherung in der Public Mirror DB
 
----
+ **Kosten:** **2.200 €**
 
-### **Paket 3: Rechnungen einsehen**
-**Was der Kunde sieht:** Liste aller Rechnungen mit Download-Möglichkeit
+ ---
 
-**Was dazu gehört:**
-- Übersicht aller Rechnungen (Nummer, Datum, Betrag, Status)
-- Rechnung als PDF herunterladen
-- Filter und Suche nach Rechnungen
-- Zahlungshistorie anzeigen
-- Status-Anzeige (Bezahlt, Offen, etc.)
+ ## Paket 3: Daten-Mirror (Intranet → Public API)
+ **Beschreibung:** Sicherer Push-Datenabgleich.
 
-**Aufwand:** 12,5 Stunden | **Kosten:** 1.125 €
+ **Leistungen:**
+ - Mirror-API (/mirror/*)
+ - Upsert-Logik für Kunden, Verträge, Rechnungen
+ - Unterstützung für PDF-Übertragung
 
----
+ **Kosten:** **900 €**
 
-### **Paket 4: Vertrag verwalten**
-**Was der Kunde sieht:** Aktuellen Vertrag ansehen und Tarif-Upgrades buchen
+ ---
 
-**Was dazu gehört:**
-- Aktuellen Vertrag anzeigen (Tarif, Geschwindigkeit, Preis)
-- Verfügbare Tarif-Upgrades anzeigen
-- Upgrade-Prozess: Kunde wählt neuen Tarif
-- Bestätigung per E-Mail an Mitarbeiter (für manuelle Bearbeitung)
-- Bestätigung an Kunde, dass Anfrage eingegangen ist
+ ## Paket 4: Rechnungen & Sichere PDF-Downloads
+ **Beschreibung:** Anzeige & Download von Rechnungen.
 
-**Aufwand:** 15 Stunden | **Kosten:** 1.350 €
+ **Leistungen:**
+ - Rechnungsübersicht
+ - Status (offen/bezahlt)
+ - PDF-Download über zeitlich limitierte Einmal-Links
 
----
+ **Kosten:** **800 €**
 
-### **Paket 5: TV-Pakete buchen**
-**Was der Kunde sieht:** TV-Pakete ansehen und buchen
+ ---
 
-**Was dazu gehört:**
-- Übersicht aller verfügbaren TV-Pakete
-- Paket-Details anzeigen (Kanäle, Preis, Features)
-- Buchungsprozess: Kunde wählt Paket
-- Bestätigung per E-Mail an Mitarbeiter (für manuelle Bearbeitung)
-- Bestätigung an Kunde, dass Anfrage eingegangen ist
-- Bereits gebuchte Pakete anzeigen
+ ## Paket 5: Vertragsverwaltung & Tarifwechsel
+ **Beschreibung:** Einsicht & Änderung von Vertragsdaten.
 
-**Aufwand:** 12,5 Stunden | **Kosten:** 1.125 €
+ **Leistungen:**
+ - Vertragsinformationen anzeigen
+ - Upgrade-Funktion
+ - E-Mail an Mitarbeiter
+ - Bestätigung an Kunden
 
----
+ **Kosten:** **800 €**
 
-### **Paket 6: Hardware bestellen**
-**Was der Kunde sieht:** Hardware-Produkte ansehen und bestellen
+ ---
 
-**Was dazu gehört:**
-- Produktkatalog (Router, WiFi-Booster, TV-Stick, etc.)
-- Produktdetails mit Bildern und Preisen
-- Bestellprozess: Kunde wählt Produkt
-- Bestätigung per E-Mail an Mitarbeiter (für manuelle Bearbeitung)
-- Bestätigung an Kunde, dass Bestellung eingegangen ist
-- Bestellhistorie anzeigen
+ ## Paket 6: Hardware- & TV-Bestellungen
+ **Beschreibung:** Produkt- und TV-Paketverwaltung.
 
-**Aufwand:** 15 Stunden | **Kosten:** 1.350 €
+ **Leistungen:**
+ - Produktkatalog
+ - Produktdetails
+ - Bestellung an Mitarbeiter per E-Mail
+ - Bestellhistorie anzeigen
 
----
+ **Kosten:** **1.000 €**
 
-### **Paket 7: Freunde werben**
-**Was der Kunde sieht:** Persönlichen Empfehlungscode teilen und Gutschriften verfolgen
+ ---
 
-**Was dazu gehört:**
-- Persönlichen Empfehlungscode anzeigen
-- Code teilen (per E-Mail, WhatsApp, etc.)
-- Erklärung wie das Programm funktioniert
-- Übersicht: Wie viele Freunde wurden geworben
-- Status der Gutschriften anzeigen (Ausstehend, Gutgeschrieben)
-- **Automatische Reminder:** E-Mail-Erinnerungen an Kunden, wenn Gutschriften ausstehen
-- **Automatische Gutschriften:** System erkennt wenn Freund Vertrag abschließt und vergibt Gutschrift
-- Übersicht über erhaltene Gutschriften und Geschenke
+ ## Paket 7: Freunde-werben (Referral)
+ **Beschreibung:** Empfehlungscode & Übersicht.
 
-**Aufwand:** 20 Stunden | **Kosten:** 1.800 €
+ **Leistungen:**
+ - Empfehlungscode anzeigen
+ - Teilen via WhatsApp/E-Mail
+ - Anzeige der geworbenen Freunde
+ - E-Mail-Events an Mitarbeiter
 
----
+ **Kosten:** **900 €**
 
-### **Paket 8: Hilfe & Support**
-**Was der Kunde sieht:** Kontaktmöglichkeiten für Support
+ ---
 
-**Was dazu gehört:**
-- Support-Übersichtsseite
-- WhatsApp-Kontakt (Link zu WhatsApp)
-- Telefonnummer anzeigen (mit Klick zum Anrufen)
-- E-Mail-Kontakt (mit Klick zum E-Mail-Programm)
-- FAQ-Bereich (häufige Fragen)
+ ## Paket 8: Support & FAQ
+ **Beschreibung:** Kontaktmöglichkeiten.
 
-**Aufwand:** 10 Stunden | **Kosten:** 900 €
+ **Leistungen:**
+ - WhatsApp-Link
+ - Support-E-Mail
+ - Support-Telefon
+ - FAQ-Bereich
 
----
+ **Kosten:** **500 €**
 
-### **Paket 9: E-Mail-System für Mitarbeiter**
-**Was passiert:** Automatische E-Mails an Mitarbeiter bei Bestellungen
+ ---
 
-**Was dazu gehört:**
-- E-Mail-Vorlagen für verschiedene Bestellungen
-- E-Mail bei Hardware-Bestellung (mit Produkt, Kunde, Adresse)
-- E-Mail bei Tarif-Upgrade (mit altem/neuem Tarif, Kunde)
-- E-Mail bei TV-Paket-Buchung (mit Paket, Kunde)
-- E-Mail-Bestätigung an Kunden (Bestellung eingegangen)
+ ## Paket 9: Admin-Konfigurations-Panel
+ **Beschreibung:** Interne Verwaltungsoberfläche.
 
-**Aufwand:** 7,5 Stunden | **Kosten:** 675 €
+ **Leistungen:**
+ - E-Mail-Routing (TV, Hardware, Upgrade, Referral)
+ - Aktionsbanner (Bild hochladen, an/aus)
+ - WhatsApp-Supportdaten
+ - Kontaktinformationen
+ - Allgemeine Systemeinstellungen
 
----
+ **Kosten:** **1.200 €**
 
-## Zusammenfassung
+ ---
 
-| Paket | Beschreibung | Stunden | Kosten (€) |
-|-------|--------------|---------|------------|
-| 1 | Mobile Apps (iOS & Android) | 70 | 6.300 |
-| 2 | Dashboard & Startseite | 10 | 900 |
-| 3 | Rechnungen einsehen | 12,5 | 1.125 |
-| 4 | Vertrag verwalten | 15 | 1.350 |
-| 5 | TV-Pakete buchen | 12,5 | 1.125 |
-| 6 | Hardware bestellen | 15 | 1.350 |
-| 7 | Freunde werben | 20 | 1.800 |
-| 8 | Hilfe & Support | 10 | 900 |
-| 9 | E-Mail-System für Mitarbeiter | 7,5 | 675 |
-| **GESAMT** | | **172,5** | **15.525** |
+ # Abgrenzungen (Nicht Bestandteil dieses Angebots)
 
----
+ **1. Gutschein-Code-Handling (Referral)**  
+ - Gutscheincodes werden **nicht automatisch verarbeitet**.  
+ - Sie können optional vom Kunden eingegeben werden, aber:  
+   - keine Validierung  
+   - keine automatische Gutschrift  
+   - keine Logik zur Code-Prüfung  
 
-## Preisempfehlung
+ **2. Echtzeit-Datenaktualisierung**  
+ - Die App zeigt **gespiegelte Daten**, nicht Live-Daten.  
+ - Der Mirror läuft z. B. **einmal pro Stunde**.  
+ - Änderungen im Intranet erscheinen erst nach dem nächsten Sync.  
 
-**Basis-Preis:** 15.525 €  
-**Puffer (15%):** 2.329 €  
-**Gesamtpreis:** **17.854 €**
+ **3. Kein direkter Zugriff auf das Intranet**  
+ - Der Public API Server hat **keinen Zugang** zu internen Systemen.  
+ - Alle Daten müssen vom Intranet aktiv an die Mirror-API gesendet werden.  
 
-### Alternative: Phasenweise Abrechnung
+ **4. Keine automatische Provisionierung**  
+ - Alle Anfragen (TV, Hardware, Upgrade) werden nur per E-Mail an Mitarbeiter geschickt.  
+ - Es erfolgt **keine automatische Bearbeitung** oder Weiterverarbeitung.  
 
-**Phase 1 - Basis (Pakete 1, 2):** 7.200 €  
-**Phase 2 - Kernfunktionen (Pakete 3, 4, 5, 6):** 4.950 €  
-**Phase 3 - Erweiterte Features (Pakete 7, 8, 9):** 3.375 €  
-**Puffer:** 2.329 €  
-**Gesamt:** **17.854 €**
+ **5. Keine Push-Benachrichtigungen**  
+ - Push Notifications sind nicht Teil dieses Angebots.  
 
----
+ **6. Kein Web-Kundenportal**  
+ - Dieses Angebot umfasst ausschließlich die **Mobile App**.  
+ - Keine Web-Version.
 
-## Zusätzliche monatliche Kosten
+ ---
 
-| Service | Monatlich (€) |
-|---------|---------------|
-| App Store Gebühren (iOS + Android) | ~10 |
-| E-Mail-Versand (für Benachrichtigungen) | 20-50 |
-| **Gesamt** | **~30-60** |
+ # Zusammenfassung
 
----
+ | Paket | Beschreibung | Kosten (€) |
+ |-------|--------------|------------:|
+ | 1 | Mobile Apps | 2.500 |
+ | 2 | Public API Backend | 2.200 |
+ | 3 | Daten-Mirror | 900 |
+ | 4 | Rechnungen + PDF | 800 |
+ | 5 | Vertragsverwaltung | 800 |
+ | 6 | Hardware & TV | 1.000 |
+ | 7 | Empfehlungssystem | 900 |
+ | 8 | Support & FAQ | 500 |
+ | 9 | Admin-Konfiguration | 1.200 |
+ | **GESAMT** | | **10.000 € brutto** |
 
-## Projektlaufzeit
+ ---
 
-**Geschätzte Dauer:** 1,5-2 Monate (bei 1-2 Entwicklern)
+ # Projektlaufzeit
+ **Geschätzte Dauer:** 6–8 Wochen
 
-**Empfohlener Ablauf:**
-- **Woche 1-2:** Mobile Apps + Dashboard
-- **Woche 3-4:** Rechnungen + Vertrag + TV-Pakete + Hardware
-- **Woche 5-6:** Freunde werben + Support + E-Mail-System
-- **Woche 7-8:** Testing, Fehlerbehebung, Finalisierung
+ - Woche 1–2: API + Mirror  
+ - Woche 3–4: App Grundstruktur + Dashboard  
+ - Woche 5–6: Rechnungen, Verträge, Bestellungen  
+ - Woche 7–8: Referral, Admin UI, Tests  
 
----
+ ---
 
-## Wichtige Hinweise
-
-**Alle Bestellungen** (Hardware, Tarif-Upgrade, TV-Paket) werden per E-Mail an Mitarbeiter gesendet  
-**Automatische Gutschriften** bei erfolgreichen Referrals  
-**Automatische Reminder** für ausstehende Referral-Gutschriften  
-**Aktionsanzeigen** - Bild kann einfach im System ausgetauscht werden  
-**Einfache Bedienung** - alles selbsterklärend für Kunden
-
+ # Hinweise
+ - Die App spricht ausschließlich mit dem Public API Server.  
+ - Der Mirror erfolgt einseitig (Intranet → Public API).  
+ - Admin UI ermöglicht Änderungen ohne neue Deployments.  
+ - Keine Abhängigkeit zu externen Systemen.  

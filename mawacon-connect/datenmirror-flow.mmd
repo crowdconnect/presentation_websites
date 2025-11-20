@@ -1,0 +1,61 @@
+mindmap
+  root((Sync Workflow))
+
+    Trigger
+      Cronjob im Intranet
+        läuft z.B. jede Stunde
+        startet vollständigen Sync-Durchlauf
+
+    Richtung 1: Intranet → Public API (Daten-Mirror)
+      Daten sammeln
+        geänderte Kunden
+        geänderte Verträge
+        geänderte Anschlüsse/Produkte
+        geänderte Rechnungen
+        neue / aktualisierte Rechnungs-PDFs
+      Push an Public API
+        POST /mirror/customers
+          Kunden upsert
+        POST /mirror/contracts
+          Verträge upsert
+        POST /mirror/invoices
+          Rechnungen upsert
+        POST /mirror/invoice-pdf
+          PDF speichern / referenzieren
+      Abschluss
+        last_sync_timestamp im Intranet aktualisieren
+        Status/Logging des Mirror-Laufs
+
+    Richtung 2: Public API → Intranet (Referral-Sync)
+      Daten abholen
+        Intranet ruft Public API auf
+        z.B. GET /sync/referrals?since=last_referral_sync
+      Inhalt
+        neue Referral-Ereignisse
+          welcher Kunde hat wen geworben
+          verwendete Empfehlungscodes
+          Zeitpunkt der Ereignisse
+      Verarbeitung im Intranet
+        Zuordnung zum internen Kundenstamm
+        Weitergabe an interne Prozesse
+          manuelle Prüfung
+          Gutschriften / Hardware-Prämien
+        Aktualisierung des Referral-Status im Intranet
+      Rückmeldung an Public API (optional)
+        Markierung von Referral-Events als "übernommen"
+
+    Rahmenbedingungen
+      Kein Echtzeit-System
+        Datenstand in der App immer zeitverzögert
+        Änderungen erst nach nächstem Sync sichtbar
+      Einbahnstraßen-Zugriffe
+        Public API greift nicht aktiv aufs Intranet zu
+        Intranet entscheidet, wann und was synchronisiert wird
+
+    Fehler & Robustheit
+      Fehler im Mirror
+        Logging pro Schritt
+        Wiederholung beim nächsten Cronlauf
+      Datenkonsistenz
+        Idempotente Upserts
+        Verwendung von Zeitstempeln (changed_since)

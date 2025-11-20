@@ -1,0 +1,48 @@
+sequenceDiagram
+    autonumber
+    participant C as Cron Job (Intranet)
+    participant INTRA as Mawacon Intranet Server
+    participant PUB as Public API Server
+    participant MDB as Public Mirror DB
+
+    C->>INTRA: Start mirror job
+
+    %% Collect outbound data (Intranet → Public)
+    INTRA->>INTRA: Collect changed customers
+    INTRA->>INTRA: Collect changed contracts and lines
+    INTRA->>INTRA: Collect invoice metadata
+    INTRA->>INTRA: Collect new/updated invoice PDFs (optional)
+
+    %% Push to Public API
+    INTRA->>PUB: POST /mirror/customers
+    PUB->>MDB: Upsert customers
+    PUB-->>INTRA: OK
+
+    INTRA->>PUB: POST /mirror/contracts
+    PUB->>MDB: Upsert contracts
+    PUB-->>INTRA: OK
+
+    INTRA->>PUB: POST /mirror/invoices
+    PUB->>MDB: Upsert invoices
+    PUB-->>INTRA: OK
+
+    opt PDF Upload
+        INTRA->>PUB: POST /mirror/invoice-pdf
+        PUB->>MDB: Store PDF + checksum
+        PUB-->>INTRA: OK
+    end
+
+    %% NEW: Read referral events (Public → Intranet)
+    INTRA->>PUB: GET /mirror/referrals?since=last_referral_sync
+    PUB-->>INTRA: Return list of referral-codes + events
+
+    INTRA->>INTRA: Process referral events
+    INTRA->>INTRA: Mark customers as "app installed / referral created"
+
+    %% Optional: mark events as fetched
+    INTRA->>PUB: POST /mirror/referrals/ack
+    PUB-->>INTRA: OK
+
+    %% Finish
+    INTRA->>INTRA: Update last_sync_timestamp + referral_sync_timestamp
+    INTRA-->>C: Mirror process completed

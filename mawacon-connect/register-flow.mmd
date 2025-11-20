@@ -1,0 +1,44 @@
+sequenceDiagram
+    autonumber
+    participant U as User
+    participant A as Mobile App
+    participant API as Public API Server
+    participant DB as Public Mirror DB
+    participant M as Mail Server
+    participant E as Nutzer Mailclient
+
+    U->>A: Wählt "Registrieren"
+    A->>U: Formular (Kundennummer, E-Mail, PLZ)
+    U->>A: Gibt Daten ein
+    A->>API: POST /register-init
+
+    API->>DB: Abgleich Kundendaten
+    DB-->>API: Kunde gefunden / nicht
+
+    alt Kunde gefunden
+        API->>DB: Erzeuge registration_token
+        API->>M: Sende Bestätigungs-Mail
+        M-->>E: Mail zugestellt
+        API-->>A: Bitte E-Mail prüfen
+    else Kunde nicht gefunden
+        API-->>A: Fehlermeldung anzeigen
+    end
+
+    U->>E: Öffnet E-Mail
+    E->>API: GET /register-confirm?token=
+
+    API->>DB: Prüfe token
+    DB-->>API: Token gültig / ungültig
+
+    alt Token gültig
+        API->>DB: Markiere token als benutzt
+        API->>DB: Erzeuge app_user (verknüpft mit customer_id)
+        API-->>E: Passwort setzen
+    else Token ungültig/abgelaufen
+        API-->>E: Fehlermeldung
+    end
+
+    U->>A: Öffnet App erneut
+    A->>API: POST /set-password
+    API->>DB: Speichere Passwort-Hash
+    API-->>A: Registrierung abgeschlossen

@@ -1,0 +1,24 @@
+sequenceDiagram
+    autonumber
+    participant U as User
+    participant A as Mobile App
+    participant API as Public API Server
+    participant DB as Public Mirror DB
+
+    U->>A: Enters email + password
+    A->>API: POST /login
+
+    API->>DB: Find app_user by email
+    DB-->>API: User found / not found
+
+    alt User found
+        API->>API: Verify password hash
+        alt Correct password
+            API->>API: Generate auth token
+            API-->>A: Login success
+        else Wrong password
+            API-->>A: 401 Unauthorized
+        end
+    else Not found
+        API-->>A: 404 User not found
+    end

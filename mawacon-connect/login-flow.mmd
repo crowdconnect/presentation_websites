@@ -1,0 +1,24 @@
+sequenceDiagram
+    autonumber
+    participant U as User
+    participant A as Mobile App
+    participant API as Public API Server
+    participant DB as Public Mirror DB
+
+    U->>A: Gibt E-Mail + Passwort ein
+    A->>API: POST /login
+
+    API->>DB: Suche app_user
+    DB-->>API: Ergebnis
+
+    alt Benutzer gefunden
+        API->>API: Passwort prüfen
+        alt Passwort korrekt
+            API->>API: Erzeuge Auth-Token
+            API-->>A: Login erfolgreich
+        else Passwort falsch
+            API-->>A: 401 Fehler
+        end
+    else Benutzer nicht gefunden
+        API-->>A: 404 Fehler
+    end

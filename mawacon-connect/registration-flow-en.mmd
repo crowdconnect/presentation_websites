@@ -1,0 +1,45 @@
+sequenceDiagram
+    autonumber
+    participant U as User
+    participant A as Mobile App
+    participant API as Public API Server
+    participant DB as Public Mirror DB
+    participant M as Mail Server
+    participant E as Email Client (User)
+
+    U->>A: Selects "Register"
+    A->>U: Shows form (Customer ID, Email, ZIP)
+    U->>A: Enters data
+    A->>API: POST /register-init
+
+    API->>DB: Validate customer data
+    DB-->>API: Match / No match
+
+    alt Customer found
+        API->>DB: Create registration_token
+        API->>M: Send confirmation email
+        M-->>E: Email delivered
+        API-->>A: "Check your email"
+    else Not found
+        API-->>A: "Data does not match"
+        A->>U: Show error
+    end
+
+    U->>E: Opens email
+    E->>API: GET /register-confirm?token=
+
+    API->>DB: Validate token
+    DB-->>API: Valid / Invalid
+
+    alt Token valid
+        API->>DB: Mark token as used
+        API->>DB: Create app_user linked to customer_id
+        API-->>E: "Please set your password"
+    else Token invalid/expired
+        API-->>E: Error message
+    end
+
+    U->>A: Opens app again
+    A->>API: POST /set-password
+    API->>DB: Save password hash
+    API-->>A: Registration complete

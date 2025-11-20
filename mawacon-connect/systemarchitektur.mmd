@@ -1,0 +1,26 @@
+flowchart LR
+    subgraph Client
+        A[React Native App]
+    end
+
+    subgraph PublicZone[Public Zone]
+        API[Public API Server]
+        DB[(Public Mirror DB)]
+    end
+
+    subgraph Intranet[Mawacon Intranet]
+        CRON[Cron Job]
+        INTRA[Mawacon Intranet Server]
+    end
+
+    subgraph Infra[Externe Dienste]
+        MAIL[Mail Server]
+    end
+
+    A -->|HTTPS JSON| API
+    API --> DB
+
+    CRON -->|Push Daten| API
+    INTRA --> CRON
+
+    API -->|Benachrichtigungen| MAIL
