@@ -37,3 +37,11 @@ export interface TvPackage {
   waiputhekItems: string;
   isPlus: boolean;
 }
+
+export interface ReferralReward {
+  name: string;
+  description: string;
+  imageUrl: string;
+  imageHint?: string;
+  perks?: string[];
+}

@@ -14,6 +14,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
+import { referralReward } from '@/lib/data';
 import {
   Mail,
   Phone,
@@ -21,6 +22,7 @@ import {
   Image as ImageIcon,
   MessageSquare,
   Settings,
+  Gift,
 } from 'lucide-react';
 
 const initialConfig = {
@@ -32,12 +34,6 @@ const initialConfig = {
     contractUpgrades: 'contracts@mawacon.de',
     referralNotifications: 'marketing@mawacon.de',
   },
-  processes: {
-    autoApproveHardware: true,
-    autoApproveTv: false,
-    requireUpgradeApproval: true,
-    enableReferralNotifications: true,
-  },
   support: {
     whatsappLink: 'https://wa.me/491234567890',
     supportEmail: 'support@mawacon.de',
@@ -48,6 +44,11 @@ const initialConfig = {
     title: 'Aktion',
     text: 'Sichern Sie sich jetzt unser Glasfaser-Angebot!',
     bannerUrl: '/ad.png',
+  },
+  referralGift: {
+    name: referralReward.name,
+    description: referralReward.description,
+    imageUrl: referralReward.imageUrl,
   },
   general: {
     defaultSenderEmail: 'no-reply@mawacon.de',
@@ -92,6 +93,17 @@ export default function AdminPage() {
       const reader = new FileReader();
       reader.onload = () => {
         updateConfig('advertising', 'bannerUrl', reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleReferralGiftUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        updateConfig('referralGift', 'imageUrl', reader.result as string);
       };
       reader.readAsDataURL(file);
     }
@@ -142,69 +154,6 @@ export default function AdminPage() {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Settings className="size-5 text-primary" />
-              Prozess-Einstellungen
-            </CardTitle>
-            <CardDescription>
-              Steuern Sie, wie Anfragen automatisiert verarbeitet werden.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between border rounded-lg p-4">
-              <div>
-                <p className="font-medium">Hardware-Bestellungen automatisch freigeben</p>
-                <p className="text-sm text-muted-foreground">
-                  Bestellungen ohne manuelle Prüfung weiterleiten.
-                </p>
-              </div>
-              <Switch
-                checked={config.processes.autoApproveHardware}
-                onCheckedChange={(value) => updateConfig('processes', 'autoApproveHardware', value)}
-              />
-            </div>
-            <div className="flex items-center justify-between border rounded-lg p-4">
-              <div>
-                <p className="font-medium">TV-Paket Buchungen automatisch anstoßen</p>
-                <p className="text-sm text-muted-foreground">
-                  Überträgt Bestellungen direkt an den Provider.
-                </p>
-              </div>
-              <Switch
-                checked={config.processes.autoApproveTv}
-                onCheckedChange={(value) => updateConfig('processes', 'autoApproveTv', value)}
-              />
-            </div>
-            <div className="flex items-center justify-between border rounded-lg p-4">
-              <div>
-                <p className="font-medium">Vertragsupgrades benötigen Freigabe</p>
-                <p className="text-sm text-muted-foreground">
-                  Wenn deaktiviert, werden Upgrades automatisch bestätigt.
-                </p>
-              </div>
-              <Switch
-                checked={config.processes.requireUpgradeApproval}
-                onCheckedChange={(value) => updateConfig('processes', 'requireUpgradeApproval', value)}
-              />
-            </div>
-            <div className="flex items-center justify-between border rounded-lg p-4">
-              <div>
-                <p className="font-medium">Prämien-Benachrichtigungen senden</p>
-                <p className="text-sm text-muted-foreground">
-                  Informiert Kunden automatisch über Referral-Prämien.
-                </p>
-              </div>
-              <Switch
-                checked={config.processes.enableReferralNotifications}
-                onCheckedChange={(value) =>
-                  updateConfig('processes', 'enableReferralNotifications', value)
-                }
-              />
-            </div>
-          </CardContent>
-        </Card>
 
         <Card>
           <CardHeader>
@@ -298,6 +247,46 @@ export default function AdminPage() {
               {config.advertising.bannerUrl && (
                 <div className="border rounded-lg overflow-hidden mt-2">
                   <img src={config.advertising.bannerUrl} alt="Banner" className="w-full max-h-64 object-cover" />
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Gift className="size-5 text-primary" />
+              Referral Geschenk
+            </CardTitle>
+            <CardDescription>
+              Pflegen Sie Name, Beschreibung und Bild des aktuellen Rewards.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label>Geschenkname</Label>
+                <Input
+                  value={config.referralGift.name}
+                  onChange={(e) => updateConfig('referralGift', 'name', e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Beschreibung</Label>
+                <Textarea
+                  rows={3}
+                  value={config.referralGift.description}
+                  onChange={(e) => updateConfig('referralGift', 'description', e.target.value)}
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Bild</Label>
+              <Input type="file" accept="image/*" onChange={handleReferralGiftUpload} />
+              {config.referralGift.imageUrl && (
+                <div className="border rounded-lg overflow-hidden mt-2">
+                  <img src={config.referralGift.imageUrl} alt={config.referralGift.name} className="w-full max-h-64 object-cover" />
                 </div>
               )}
             </div>

@@ -1,4 +1,4 @@
-import type { Contract, Hardware, TvPackage } from '@/lib/types';
+import type { Contract, Hardware, TvPackage, ReferralReward } from '@/lib/types';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 export const internetPackages: Contract[] = [
@@ -141,6 +141,16 @@ export const tvPackages: TvPackage[] = [
     ],
   },
 ];
+
+export const referralReward: ReferralReward = {
+  name: 'Mawacon Wunschgeschenk',
+  description: 'Sammeln Sie Empfehlungen und sichern Sie sich ein hochwertiges Dankeschön für Ihr Vertrauen.',
+  imageUrl: getImageUrl('referral_gift', 'referral_gift'),
+  imageHint: getImageHint('referral_gift', 'gift box'),
+  perks: [
+    'Belohnung wird nach erfolgreicher Aktivierung gutgeschrieben',
+  ],
+};
 
 export const user = {
   name: 'Dzevad Corhamzic',

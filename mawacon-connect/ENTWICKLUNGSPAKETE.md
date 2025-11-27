@@ -106,6 +106,7 @@
  - Empfehlungscode anzeigen
  - Teilen via WhatsApp/E-Mail
  - Anzeige der geworbenen Freunde
+- Variable Geschenk-Auswahl (Name, Beschreibung, Bild)
  - E-Mail-Events an Mitarbeiter
 
  **Kosten:** **900 €**
@@ -130,6 +131,7 @@
 
  **Leistungen:**
  - E-Mail-Routing (TV, Hardware, Upgrade, Referral)
+- Pflege der Referral-Geschenke (Name, Beschreibung, Bild)
  - Aktionsbanner (Bild hochladen, an/aus)
  - WhatsApp-Supportdaten
  - Kontaktinformationen
