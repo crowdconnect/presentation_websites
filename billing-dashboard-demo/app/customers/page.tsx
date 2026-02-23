@@ -5,16 +5,18 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Input } from "@/components/ui/input"
-import { AlertCircle, CheckCircle, Clock, ArrowLeft, Search } from "lucide-react"
+import { AlertCircle, CheckCircle, Clock, ArrowLeft, Search, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react"
 import Link from "next/link"
 import { useState } from "react"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 interface Customer {
   id: string
-  name: string
+  firstName: string
+  lastName: string
+  company: string | null
   email: string
   lastInvoiceDate: string
-  status: "delivered" | "failed" | "pending"
   amount: number
   invoiceNumber?: string
   customerNumber: string
@@ -25,10 +27,11 @@ interface Customer {
 const allCustomers: Customer[] = [
   {
     id: "CUST-001",
-    name: "Müller GmbH",
+    firstName: "Max",
+    lastName: "Müller",
+    company: "Müller GmbH",
     email: "buchhaltung@mueller-gmbh.de",
     lastInvoiceDate: "2025-08-25T11:30:00",
-    status: "delivered",
     amount: 2450.8,
     invoiceNumber: "INV-2025-0847",
     customerNumber: "K-001",
@@ -37,10 +40,11 @@ const allCustomers: Customer[] = [
   },
   {
     id: "CUST-002",
-    name: "Schmidt & Partner",
+    firstName: "Peter",
+    lastName: "Schmidt",
+    company: "Schmidt & Partner",
     email: "finanzen@schmidt-partner.de",
     lastInvoiceDate: "2025-08-25T11:28:00",
-    status: "failed",
     amount: 1890.5,
     invoiceNumber: "INV-2025-0848",
     customerNumber: "K-002",
@@ -49,10 +53,11 @@ const allCustomers: Customer[] = [
   },
   {
     id: "CUST-003",
-    name: "Weber Industries",
+    firstName: "Anna",
+    lastName: "Weber",
+    company: "Weber Industries",
     email: "rechnungen@weber-ind.com",
     lastInvoiceDate: "2025-08-25T11:25:00",
-    status: "delivered",
     amount: 3200.0,
     invoiceNumber: "INV-2025-0849",
     customerNumber: "K-003",
@@ -61,10 +66,11 @@ const allCustomers: Customer[] = [
   },
   {
     id: "CUST-004",
-    name: "Fischer Consulting",
+    firstName: "Thomas",
+    lastName: "Fischer",
+    company: "Fischer Consulting",
     email: "admin@fischer-consulting.de",
     lastInvoiceDate: "2025-08-25T11:22:00",
-    status: "pending",
     amount: 1650.25,
     customerNumber: "K-004",
     totalInvoices: 6,
@@ -72,23 +78,24 @@ const allCustomers: Customer[] = [
   },
   {
     id: "CUST-005",
-    name: "Bauer Logistik",
+    firstName: "Michael",
+    lastName: "Bauer",
+    company: "Bauer Logistik",
     email: "buchhaltung@bauer-logistik.de",
     lastInvoiceDate: "2025-08-25T11:20:00",
-    status: "delivered",
     amount: 4100.75,
     invoiceNumber: "INV-2025-0850",
     customerNumber: "K-005",
     totalInvoices: 20,
     totalAmount: 82015.0,
   },
-  // Additional customers for demonstration
   {
     id: "CUST-006",
-    name: "Hoffmann Tech",
+    firstName: "Sarah",
+    lastName: "Hoffmann",
+    company: "Hoffmann Tech",
     email: "billing@hoffmann-tech.de",
     lastInvoiceDate: "2025-08-25T11:18:00",
-    status: "delivered",
     amount: 2750.3,
     invoiceNumber: "INV-2025-0851",
     customerNumber: "K-006",
@@ -97,62 +104,143 @@ const allCustomers: Customer[] = [
   },
   {
     id: "CUST-007",
-    name: "Klein & Associates",
+    firstName: "Julia",
+    lastName: "Klein",
+    company: "Klein & Associates",
     email: "finance@klein-associates.com",
     lastInvoiceDate: "2025-08-25T11:15:00",
-    status: "failed",
     amount: 1200.0,
     invoiceNumber: "INV-2025-0852",
     customerNumber: "K-007",
     totalInvoices: 4,
     totalAmount: 4800.0,
   },
+  {
+    id: "CUST-008",
+    firstName: "Hans",
+    lastName: "Meier",
+    company: null,
+    email: "hans.meier@example.com",
+    lastInvoiceDate: "2025-08-25T11:10:00",
+    amount: 850.5,
+    invoiceNumber: "INV-2025-0853",
+    customerNumber: "K-008",
+    totalInvoices: 3,
+    totalAmount: 2551.5,
+  },
 ]
 
 export default function CustomersPage() {
-  const [searchTerm, setSearchTerm] = useState("")
-  const [statusFilter, setStatusFilter] = useState<string>("all")
-
-  const filteredCustomers = allCustomers.filter((customer) => {
-    const matchesSearch =
-      customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      customer.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      customer.customerNumber.toLowerCase().includes(searchTerm.toLowerCase())
-
-    const matchesStatus = statusFilter === "all" || customer.status === statusFilter
-
-    return matchesSearch && matchesStatus
+  const [sortColumn, setSortColumn] = useState<string | null>(null)
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc")
+  const [filters, setFilters] = useState({
+    customerNumber: "",
+    firstName: "",
+    lastName: "",
+    company: "",
+    email: "",
+    lastInvoiceDate: "",
+    amount: "",
+    totalInvoices: "",
+    totalAmount: "",
   })
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case "delivered":
-        return <CheckCircle className="w-4 h-4 text-chart-3" />
-      case "failed":
-        return <AlertCircle className="w-4 h-4 text-destructive" />
-      case "pending":
-        return <Clock className="w-4 h-4 text-muted-foreground" />
-      default:
-        return null
+  const handleSort = (column: string) => {
+    if (sortColumn === column) {
+      setSortOrder(sortOrder === "asc" ? "desc" : "asc")
+    } else {
+      setSortColumn(column)
+      setSortOrder("asc")
     }
   }
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "delivered":
-        return (
-          <Badge variant="secondary" className="bg-chart-3/10 text-chart-3">
-            Zugestellt
-          </Badge>
-        )
-      case "failed":
-        return <Badge variant="destructive">Fehler</Badge>
-      case "pending":
-        return <Badge variant="outline">Wartend</Badge>
-      default:
-        return null
+  const getSortIcon = (column: string) => {
+    if (sortColumn !== column) {
+      return <ArrowUpDown className="w-4 h-4 ml-1 text-gray-400" />
     }
+    return sortOrder === "asc" ? (
+      <ArrowUp className="w-4 h-4 ml-1 text-gray-600" />
+    ) : (
+      <ArrowDown className="w-4 h-4 ml-1 text-gray-600" />
+    )
   }
+
+  const filteredAndSortedCustomers = allCustomers
+    .filter((customer) => {
+      const matchesCustomerNumber = filters.customerNumber === "" || customer.customerNumber.toLowerCase().includes(filters.customerNumber.toLowerCase())
+      const matchesFirstName = filters.firstName === "" || customer.firstName.toLowerCase().includes(filters.firstName.toLowerCase())
+      const matchesLastName = filters.lastName === "" || customer.lastName.toLowerCase().includes(filters.lastName.toLowerCase())
+      const matchesCompany = filters.company === "" || (customer.company && customer.company.toLowerCase().includes(filters.company.toLowerCase()))
+      const matchesEmail = filters.email === "" || customer.email.toLowerCase().includes(filters.email.toLowerCase())
+      const matchesLastInvoiceDate = filters.lastInvoiceDate === "" || formatDateTime(customer.lastInvoiceDate).includes(filters.lastInvoiceDate)
+      const matchesAmount = filters.amount === "" || customer.amount.toString().includes(filters.amount)
+      const matchesTotalInvoices = filters.totalInvoices === "" || customer.totalInvoices.toString().includes(filters.totalInvoices)
+      const matchesTotalAmount = filters.totalAmount === "" || customer.totalAmount.toString().includes(filters.totalAmount)
+      
+      return (
+        matchesCustomerNumber &&
+        matchesFirstName &&
+        matchesLastName &&
+        matchesCompany &&
+        matchesEmail &&
+        matchesLastInvoiceDate &&
+        matchesAmount &&
+        matchesTotalInvoices &&
+        matchesTotalAmount
+      )
+    })
+    .sort((a, b) => {
+      if (!sortColumn) return 0
+
+      let aValue: any, bValue: any
+
+      switch (sortColumn) {
+        case "customerNumber":
+          aValue = a.customerNumber
+          bValue = b.customerNumber
+          break
+        case "firstName":
+          aValue = a.firstName
+          bValue = b.firstName
+          break
+        case "lastName":
+          aValue = a.lastName
+          bValue = b.lastName
+          break
+        case "company":
+          aValue = a.company || ""
+          bValue = b.company || ""
+          break
+        case "email":
+          aValue = a.email
+          bValue = b.email
+          break
+        case "lastInvoiceDate":
+          aValue = new Date(a.lastInvoiceDate).getTime()
+          bValue = new Date(b.lastInvoiceDate).getTime()
+          break
+        case "amount":
+          aValue = a.amount
+          bValue = b.amount
+          break
+        case "totalInvoices":
+          aValue = a.totalInvoices
+          bValue = b.totalInvoices
+          break
+        case "totalAmount":
+          aValue = a.totalAmount
+          bValue = b.totalAmount
+          break
+        default:
+          return 0
+      }
+
+      if (sortOrder === "asc") {
+        return aValue > bValue ? 1 : -1
+      } else {
+        return aValue < bValue ? 1 : -1
+      }
+    })
 
   const formatDateTime = (dateString: string) => {
     return new Date(dateString).toLocaleString("de-DE", {
@@ -172,9 +260,6 @@ export default function CustomersPage() {
   }
 
   const totalCustomers = allCustomers.length
-  const deliveredCount = allCustomers.filter((c) => c.status === "delivered").length
-  const failedCount = allCustomers.filter((c) => c.status === "failed").length
-  const pendingCount = allCustomers.filter((c) => c.status === "pending").length
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: "#274366" }}>
@@ -206,116 +291,183 @@ export default function CustomersPage() {
             <h1 className="text-2xl font-bold text-white">Kunden Rechnungsübersicht</h1>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-4 mb-6">
+          <div className="grid gap-4 md:grid-cols-1 mb-6">
             <Card className="bg-white border-gray-200">
               <CardContent className="p-4">
                 <div className="text-2xl font-bold text-gray-900">{totalCustomers}</div>
                 <p className="text-sm text-gray-600">Gesamt Kunden</p>
               </CardContent>
             </Card>
-            <Card className="bg-white border-gray-200">
-              <CardContent className="p-4">
-                <div className="text-2xl font-bold text-green-600">{deliveredCount}</div>
-                <p className="text-sm text-gray-600">Zugestellt</p>
-              </CardContent>
-            </Card>
-            <Card className="bg-white border-gray-200">
-              <CardContent className="p-4">
-                <div className="text-2xl font-bold text-red-600">{failedCount}</div>
-                <p className="text-sm text-gray-600">Fehler</p>
-              </CardContent>
-            </Card>
-            <Card className="bg-white border-gray-200">
-              <CardContent className="p-4">
-                <div className="text-2xl font-bold text-gray-600">{pendingCount}</div>
-                <p className="text-sm text-gray-600">Wartend</p>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Search and Filter */}
-          <div className="flex gap-4 mb-6">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-              <Input
-                placeholder="Kunde, E-Mail oder Kundennummer suchen..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 bg-white border-gray-200 text-gray-900 placeholder:text-gray-500"
-              />
-            </div>
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-3 py-2 border border-gray-200 bg-white text-gray-900 rounded-md text-sm"
-            >
-              <option value="all" className="text-black">
-                Alle Status
-              </option>
-              <option value="delivered" className="text-black">
-                Zugestellt
-              </option>
-              <option value="failed" className="text-black">
-                Fehler
-              </option>
-              <option value="pending" className="text-black">
-                Wartend
-              </option>
-            </select>
           </div>
         </div>
 
         {/* Customer Table */}
         <Card className="bg-white border-gray-200">
           <CardHeader>
-            <CardTitle className="text-gray-900">Alle Kunden ({filteredCustomers.length})</CardTitle>
+            <CardTitle className="text-gray-900">Alle Kunden ({filteredAndSortedCustomers.length})</CardTitle>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow className="border-gray-200">
-                  <TableHead className="text-gray-700">Kundennummer</TableHead>
-                  <TableHead className="text-gray-700">Kunde</TableHead>
-                  <TableHead className="text-gray-700">E-Mail</TableHead>
-                  <TableHead className="text-gray-700">Letzte Rechnung</TableHead>
-                  <TableHead className="text-gray-700">Status</TableHead>
-                  <TableHead className="text-gray-700">Letzter Betrag</TableHead>
-                  <TableHead className="text-gray-700">Gesamt Rechnungen</TableHead>
-                  <TableHead className="text-gray-700">Gesamt Betrag</TableHead>
-                  <TableHead className="text-gray-700">Aktionen</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredCustomers.map((customer) => (
-                  <TableRow key={customer.id} className="border-gray-200">
-                    <TableCell className="font-medium text-gray-900">{customer.customerNumber}</TableCell>
-                    <TableCell className="font-medium text-gray-900">{customer.name}</TableCell>
-                    <TableCell className="text-gray-700">{customer.email}</TableCell>
-                    <TableCell className="text-gray-900">{formatDateTime(customer.lastInvoiceDate)}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        {getStatusIcon(customer.status)}
-                        {getStatusBadge(customer.status)}
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className="border-gray-200">
+                    <TableHead className="text-gray-700">
+                      <div className="flex items-center">
+                        Kundennummer
+                        <button onClick={() => handleSort("customerNumber")} className="ml-1">
+                          {getSortIcon("customerNumber")}
+                        </button>
                       </div>
-                    </TableCell>
-                    <TableCell className="font-medium text-gray-900">{formatCurrency(customer.amount)}</TableCell>
-                    <TableCell className="text-gray-900">{customer.totalInvoices}</TableCell>
-                    <TableCell className="font-medium text-gray-900">{formatCurrency(customer.totalAmount)}</TableCell>
-                    <TableCell>
-                      <Link href={`/customer/${customer.id}`}>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="bg-white border-gray-200 text-gray-700 hover:bg-gray-50"
-                        >
-                          Ansehen
-                        </Button>
-                      </Link>
-                    </TableCell>
+                      <Input
+                        placeholder="Filter..."
+                        value={filters.customerNumber}
+                        onChange={(e) => setFilters({ ...filters, customerNumber: e.target.value })}
+                        className="mt-2 h-8 text-sm"
+                      />
+                    </TableHead>
+                    <TableHead className="text-gray-700">
+                      <div className="flex items-center">
+                        Vorname
+                        <button onClick={() => handleSort("firstName")} className="ml-1">
+                          {getSortIcon("firstName")}
+                        </button>
+                      </div>
+                      <Input
+                        placeholder="Filter..."
+                        value={filters.firstName}
+                        onChange={(e) => setFilters({ ...filters, firstName: e.target.value })}
+                        className="mt-2 h-8 text-sm"
+                      />
+                    </TableHead>
+                    <TableHead className="text-gray-700">
+                      <div className="flex items-center">
+                        Name
+                        <button onClick={() => handleSort("lastName")} className="ml-1">
+                          {getSortIcon("lastName")}
+                        </button>
+                      </div>
+                      <Input
+                        placeholder="Filter..."
+                        value={filters.lastName}
+                        onChange={(e) => setFilters({ ...filters, lastName: e.target.value })}
+                        className="mt-2 h-8 text-sm"
+                      />
+                    </TableHead>
+                    <TableHead className="text-gray-700">
+                      <div className="flex items-center">
+                        Firma
+                        <button onClick={() => handleSort("company")} className="ml-1">
+                          {getSortIcon("company")}
+                        </button>
+                      </div>
+                      <Input
+                        placeholder="Filter..."
+                        value={filters.company}
+                        onChange={(e) => setFilters({ ...filters, company: e.target.value })}
+                        className="mt-2 h-8 text-sm"
+                      />
+                    </TableHead>
+                    <TableHead className="text-gray-700">
+                      <div className="flex items-center">
+                        E-Mail
+                        <button onClick={() => handleSort("email")} className="ml-1">
+                          {getSortIcon("email")}
+                        </button>
+                      </div>
+                      <Input
+                        placeholder="Filter..."
+                        value={filters.email}
+                        onChange={(e) => setFilters({ ...filters, email: e.target.value })}
+                        className="mt-2 h-8 text-sm"
+                      />
+                    </TableHead>
+                    <TableHead className="text-gray-700">
+                      <div className="flex items-center">
+                        Letzte Rechnung
+                        <button onClick={() => handleSort("lastInvoiceDate")} className="ml-1">
+                          {getSortIcon("lastInvoiceDate")}
+                        </button>
+                      </div>
+                      <Input
+                        placeholder="Filter..."
+                        value={filters.lastInvoiceDate}
+                        onChange={(e) => setFilters({ ...filters, lastInvoiceDate: e.target.value })}
+                        className="mt-2 h-8 text-sm"
+                      />
+                    </TableHead>
+                    <TableHead className="text-gray-700">
+                      <div className="flex items-center">
+                        Letzter Betrag
+                        <button onClick={() => handleSort("amount")} className="ml-1">
+                          {getSortIcon("amount")}
+                        </button>
+                      </div>
+                      <Input
+                        placeholder="Filter..."
+                        value={filters.amount}
+                        onChange={(e) => setFilters({ ...filters, amount: e.target.value })}
+                        className="mt-2 h-8 text-sm"
+                      />
+                    </TableHead>
+                    <TableHead className="text-gray-700">
+                      <div className="flex items-center">
+                        Gesamt Rechnungen
+                        <button onClick={() => handleSort("totalInvoices")} className="ml-1">
+                          {getSortIcon("totalInvoices")}
+                        </button>
+                      </div>
+                      <Input
+                        placeholder="Filter..."
+                        value={filters.totalInvoices}
+                        onChange={(e) => setFilters({ ...filters, totalInvoices: e.target.value })}
+                        className="mt-2 h-8 text-sm"
+                      />
+                    </TableHead>
+                    <TableHead className="text-gray-700">
+                      <div className="flex items-center">
+                        Gesamt Betrag
+                        <button onClick={() => handleSort("totalAmount")} className="ml-1">
+                          {getSortIcon("totalAmount")}
+                        </button>
+                      </div>
+                      <Input
+                        placeholder="Filter..."
+                        value={filters.totalAmount}
+                        onChange={(e) => setFilters({ ...filters, totalAmount: e.target.value })}
+                        className="mt-2 h-8 text-sm"
+                      />
+                    </TableHead>
+                    <TableHead className="text-gray-700">Aktionen</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {filteredAndSortedCustomers.map((customer) => (
+                    <TableRow key={customer.id} className="border-gray-200">
+                      <TableCell className="font-medium text-gray-900">{customer.customerNumber}</TableCell>
+                      <TableCell className="font-medium text-gray-900">{customer.firstName}</TableCell>
+                      <TableCell className="font-medium text-gray-900">{customer.lastName}</TableCell>
+                      <TableCell className="text-gray-700">{customer.company || "-"}</TableCell>
+                      <TableCell className="text-gray-700">{customer.email}</TableCell>
+                      <TableCell className="text-gray-900">{formatDateTime(customer.lastInvoiceDate)}</TableCell>
+                      <TableCell className="font-medium text-gray-900">{formatCurrency(customer.amount)}</TableCell>
+                      <TableCell className="text-gray-900">{customer.totalInvoices}</TableCell>
+                      <TableCell className="font-medium text-gray-900">{formatCurrency(customer.totalAmount)}</TableCell>
+                      <TableCell>
+                        <Link href={`/customer/${customer.id}`}>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="bg-white border-gray-200 text-gray-700 hover:bg-gray-50"
+                          >
+                            Ansehen
+                          </Button>
+                        </Link>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           </CardContent>
         </Card>
       </div>
