@@ -49,7 +49,7 @@ export function CostCharts({ property }: CostChartsProps) {
     <div className="flex flex-col gap-6">
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-base">Kosten & Einnahmen</CardTitle>
+          <CardTitle className="text-base">Kosten&Einnahmen</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="h-72">
