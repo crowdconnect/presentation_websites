@@ -8,6 +8,8 @@ import type {
   Contract,
   ScannedDocument,
   ConsumptionThreshold,
+  CategoryDefinition,
+  PropertyDocument,
 } from "@/lib/types"
 
 export function AppProvider({ children }: { children: ReactNode }) {
@@ -133,6 +135,38 @@ export function AppProvider({ children }: { children: ReactNode }) {
     []
   )
 
+  const addCategoryDefinition = useCallback((def: CategoryDefinition) => {
+    setState((s) => {
+      if (s.categoryDefinitions.some((c) => c.id === def.id)) return s
+      return { ...s, categoryDefinitions: [...s.categoryDefinitions, def] }
+    })
+  }, [])
+
+  const addPropertyDocument = useCallback((doc: PropertyDocument) => {
+    setState((s) => ({
+      ...s,
+      properties: s.properties.map((p) =>
+        p.id === doc.propertyId
+          ? { ...p, propertyDocuments: [...p.propertyDocuments, doc] }
+          : p
+      ),
+    }))
+  }, [])
+
+  const deletePropertyDocument = useCallback((propertyId: string, documentId: string) => {
+    setState((s) => ({
+      ...s,
+      properties: s.properties.map((p) =>
+        p.id === propertyId
+          ? {
+              ...p,
+              propertyDocuments: p.propertyDocuments.filter((d) => d.id !== documentId),
+            }
+          : p
+      ),
+    }))
+  }, [])
+
   return (
     <AppContext.Provider
       value={{
@@ -149,6 +183,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
         updateDocument,
         deleteDocument,
         updateThreshold,
+        addCategoryDefinition,
+        addPropertyDocument,
+        deletePropertyDocument,
       }}
     >
       {children}

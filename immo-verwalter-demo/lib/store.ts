@@ -7,11 +7,15 @@ import type {
   Contract,
   ScannedDocument,
   ConsumptionThreshold,
+  CategoryDefinition,
+  PropertyDocument,
 } from "./types"
 
 export interface AppState {
   properties: Property[]
   documents: ScannedDocument[]
+  /** Zusätzliche Kategorien (Built-ins kommen aus types) */
+  categoryDefinitions: CategoryDefinition[]
 }
 
 export interface AppActions {
@@ -27,6 +31,9 @@ export interface AppActions {
   updateDocument: (id: string, updates: Partial<ScannedDocument>) => void
   deleteDocument: (id: string) => void
   updateThreshold: (propertyId: string, threshold: ConsumptionThreshold) => void
+  addCategoryDefinition: (def: CategoryDefinition) => void
+  addPropertyDocument: (doc: PropertyDocument) => void
+  deletePropertyDocument: (propertyId: string, documentId: string) => void
 }
 
 export type AppContextType = AppState & AppActions
@@ -168,6 +175,11 @@ export function createDemoData(): AppState {
     return entries
   }
 
+  const baseContract = (c: Omit<Contract, "billingCycle" | "annualAmount">): Contract => ({
+    ...c,
+    billingCycle: "monthly",
+  })
+
   const properties: Property[] = [
     {
       id: property1Id,
@@ -183,7 +195,7 @@ export function createDemoData(): AppState {
         hausgeld: 280,
       }),
       contracts: [
-        {
+        baseContract({
           id: "contract-1-1",
           propertyId: property1Id,
           category: "strom",
@@ -193,8 +205,9 @@ export function createDemoData(): AppState {
           endDate: "2026-12-31",
           cancellationPeriodMonths: 3,
           notified: false,
-        },
-        {
+          annualConsumptionBasis: 3800,
+        }),
+        baseContract({
           id: "contract-1-2",
           propertyId: property1Id,
           category: "internet",
@@ -204,8 +217,8 @@ export function createDemoData(): AppState {
           endDate: "2026-05-31",
           cancellationPeriodMonths: 3,
           notified: false,
-        },
-        {
+        }),
+        baseContract({
           id: "contract-1-3",
           propertyId: property1Id,
           category: "gas",
@@ -215,12 +228,46 @@ export function createDemoData(): AppState {
           endDate: "2026-02-28",
           cancellationPeriodMonths: 1,
           notified: false,
+          annualConsumptionBasis: 1450,
+        }),
+        {
+          id: "contract-1-4",
+          propertyId: property1Id,
+          category: "versicherung",
+          provider: "Allianz",
+          monthlyCost: 95,
+          annualAmount: 1140,
+          billingCycle: "annual",
+          startDate: "2024-01-01",
+          endDate: "2026-12-31",
+          cancellationPeriodMonths: 3,
+          notified: false,
         },
       ],
       thresholds: [
         { category: "strom", warningValue: 3500, criticalValue: 4500, unit: "kWh" },
         { category: "gas", warningValue: 1200, criticalValue: 1600, unit: "m\u00B3" },
         { category: "wasser", warningValue: 55, criticalValue: 70, unit: "m\u00B3" },
+      ],
+      propertyDocuments: [
+        {
+          id: "pdoc-1-1",
+          propertyId: property1Id,
+          kind: "reference",
+          referenceType: "grundriss",
+          fileName: "Grundriss_EG.pdf",
+          dataUrl: "/placeholder.svg",
+          uploadedAt: "2025-06-01T10:00:00.000Z",
+        },
+        {
+          id: "pdoc-1-2",
+          propertyId: property1Id,
+          kind: "reference",
+          referenceType: "grundbuch",
+          fileName: "Grundbuchauszug.pdf",
+          dataUrl: "/placeholder.svg",
+          uploadedAt: "2025-06-15T14:30:00.000Z",
+        },
       ],
     },
     {
@@ -237,7 +284,7 @@ export function createDemoData(): AppState {
         hausgeld: 350,
       }),
       contracts: [
-        {
+        baseContract({
           id: "contract-2-1",
           propertyId: property2Id,
           category: "strom",
@@ -247,8 +294,9 @@ export function createDemoData(): AppState {
           endDate: "2026-06-30",
           cancellationPeriodMonths: 2,
           notified: false,
-        },
-        {
+          annualConsumptionBasis: 4100,
+        }),
+        baseContract({
           id: "contract-2-2",
           propertyId: property2Id,
           category: "internet",
@@ -258,15 +306,31 @@ export function createDemoData(): AppState {
           endDate: "2026-08-31",
           cancellationPeriodMonths: 3,
           notified: false,
-        },
+        }),
       ],
       thresholds: [
         { category: "strom", warningValue: 4000, criticalValue: 5000, unit: "kWh" },
         { category: "gas", warningValue: 1500, criticalValue: 2000, unit: "m\u00B3" },
         { category: "wasser", warningValue: 65, criticalValue: 85, unit: "m\u00B3" },
       ],
+      propertyDocuments: [],
     },
   ]
 
-  return { properties, documents: [] }
+  return {
+    properties,
+    documents: [],
+    categoryDefinitions: [
+      {
+        id: "regenwasser",
+        label: "Regenwasserkosten",
+        behavior: "fixed",
+      },
+      {
+        id: "gebaeudeversicherung",
+        label: "Gebäudeversicherung (extra)",
+        behavior: "fixed",
+      },
+    ],
+  }
 }

@@ -15,7 +15,12 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import type { Property, CostCategory } from "@/lib/types"
-import { CATEGORY_LABELS, CATEGORY_UNITS, CATEGORIES_WITH_METER } from "@/lib/types"
+import { CATEGORIES_WITH_METER } from "@/lib/types"
+import {
+  mergeCategoryDefinitions,
+  getCategoryLabel,
+  getCategoryUnit,
+} from "@/lib/categories"
 import {
   getCostsByMonth,
   getConsumptionOverTime,
@@ -23,6 +28,7 @@ import {
   formatMonth,
   formatCurrency,
 } from "@/lib/helpers"
+import { useAppStore } from "@/lib/store"
 
 interface CostChartsProps {
   property: Property
@@ -43,6 +49,12 @@ function CostTooltip({ active, payload, label }: any) {
 }
 
 export function CostCharts({ property }: CostChartsProps) {
+  const { categoryDefinitions } = useAppStore()
+  const catDefs = mergeCategoryDefinitions(categoryDefinitions)
+  const fromDefs = catDefs.filter((c) => c.supportsMeter).map((c) => c.id)
+  const meterCategories = fromDefs.length > 0 ? fromDefs : CATEGORIES_WITH_METER
+  const defaultTab = meterCategories[0] ?? "strom"
+
   const overallData = getCostsByMonth(property.costs)
 
   return (
@@ -91,19 +103,19 @@ export function CostCharts({ property }: CostChartsProps) {
         </CardContent>
       </Card>
 
-      <Tabs defaultValue="strom">
-        <TabsList className="mb-4">
-          {CATEGORIES_WITH_METER.map((cat) => (
+      <Tabs defaultValue={defaultTab}>
+        <TabsList className="mb-4 flex flex-wrap">
+          {meterCategories.map((cat) => (
             <TabsTrigger key={cat} value={cat}>
-              {CATEGORY_LABELS[cat]}
+              {getCategoryLabel(cat, catDefs)}
             </TabsTrigger>
           ))}
         </TabsList>
-        {CATEGORIES_WITH_METER.map((cat) => (
+        {meterCategories.map((cat) => (
           <TabsContent key={cat} value={cat}>
             <div className="grid gap-6 lg:grid-cols-2">
-              <MeterChart property={property} category={cat} />
-              <ConsumptionChart property={property} category={cat} />
+              <MeterChart property={property} category={cat} catDefs={catDefs} />
+              <ConsumptionChart property={property} category={cat} catDefs={catDefs} />
             </div>
           </TabsContent>
         ))}
@@ -115,18 +127,20 @@ export function CostCharts({ property }: CostChartsProps) {
 function MeterChart({
   property,
   category,
+  catDefs,
 }: {
   property: Property
   category: CostCategory
+  catDefs: ReturnType<typeof mergeCategoryDefinitions>
 }) {
   const data = getMeterReadingsOverTime(property.costs, category)
-  const unit = CATEGORY_UNITS[category] || ""
+  const unit = getCategoryUnit(category, catDefs) || ""
 
   return (
     <Card>
       <CardHeader className="pb-2">
         <CardTitle className="text-base">
-          Zaehlerstand {CATEGORY_LABELS[category]} ({unit})
+          Zaehlerstand {getCategoryLabel(category, catDefs)} ({unit})
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -169,19 +183,21 @@ function MeterChart({
 function ConsumptionChart({
   property,
   category,
+  catDefs,
 }: {
   property: Property
   category: CostCategory
+  catDefs: ReturnType<typeof mergeCategoryDefinitions>
 }) {
   const data = getConsumptionOverTime(property.costs, category)
-  const unit = CATEGORY_UNITS[category] || ""
+  const unit = getCategoryUnit(category, catDefs) || ""
   const threshold = property.thresholds.find((t) => t.category === category)
 
   return (
     <Card>
       <CardHeader className="pb-2">
         <CardTitle className="text-base">
-          Verbrauch {CATEGORY_LABELS[category]} ({unit}/Monat)
+          Verbrauch {getCategoryLabel(category, catDefs)} ({unit}/Monat)
         </CardTitle>
       </CardHeader>
       <CardContent>

@@ -2,7 +2,7 @@
 
 import React from "react"
 
-import { useState, useRef } from "react"
+import { useEffect, useMemo, useState, useRef } from "react"
 import {
   ArrowLeft,
   FileText,
@@ -52,17 +52,24 @@ import {
 import { Label } from "@/components/ui/label"
 import type { Property, CostCategory, ScannedDocument } from "@/lib/types"
 import {
-  CATEGORY_LABELS,
-  CATEGORIES_WITH_METER,
-  CATEGORY_UNITS,
-} from "@/lib/types"
+  mergeCategoryDefinitions,
+  getCategoryLabel,
+  categorySupportsMeter,
+  getCategoryUnit,
+} from "@/lib/categories"
 import {
   getCostsByMonth,
   getConsumptionOverTime,
   getMeterReadingsOverTime,
   getAnnualConsumption,
   getConsumptionStatus,
+  getContractBudgetForPeriod,
+  getActualExpenseForCategoryForPeriod,
+  getActualIncomeForCategoryForPeriod,
+  getContractConsumptionBasisForPeriod,
+  getMeterConsumptionForCalendarYear,
   formatCurrency,
+  formatConsumptionAmount,
   formatMonth,
 } from "@/lib/helpers"
 import { useAppStore } from "@/lib/store"
@@ -92,7 +99,9 @@ function ChartTooltip({ active, payload, label }: any) {
 }
 
 export function CategoryDetailView({ property, category, onBack }: CategoryDetailViewProps) {
-  const { documents, updateDocument, deleteDocument, deleteCostEntry, addDocument } = useAppStore()
+  const { documents, updateDocument, deleteDocument, deleteCostEntry, addDocument, categoryDefinitions } =
+    useAppStore()
+  const catDefs = mergeCategoryDefinitions(categoryDefinitions)
   const [linkDialogOpen, setLinkDialogOpen] = useState(false)
   const [linkTargetDocId, setLinkTargetDocId] = useState<string | null>(null)
   const [linkTargetEntryId, setLinkTargetEntryId] = useState("")
@@ -102,9 +111,11 @@ export function CategoryDetailView({ property, category, onBack }: CategoryDetai
   const fileInputRef = useRef<HTMLInputElement>(null)
   const cameraInputRef = useRef<HTMLInputElement>(null)
 
-  const hasMeter = CATEGORIES_WITH_METER.includes(category)
-  const unit = CATEGORY_UNITS[category] || ""
-  const catLabel = CATEGORY_LABELS[category]
+  const hasMeter = categorySupportsMeter(category, catDefs)
+  const unit = getCategoryUnit(category, catDefs) || ""
+  const catLabel = getCategoryLabel(category, catDefs)
+  const catDef = catDefs.find((d) => d.id === category)
+  const isIncomeCategory = catDef?.behavior === "income"
 
   const catCosts = property.costs
     .filter((c) => c.category === category)
@@ -127,6 +138,53 @@ export function CategoryDetailView({ property, category, onBack }: CategoryDetai
   const totalIncome = catCosts.filter((c) => c.isIncome).reduce((s, c) => s + c.amount, 0)
   const avgMonthly = monthlyData.length > 0 ? Math.round(totalExpense / monthlyData.length) : 0
   const projectedAnnual = avgMonthly * 12
+
+  const planYears = useMemo(() => {
+    const ys = new Set<number>()
+    for (const c of catCosts) {
+      ys.add(Number.parseInt(c.date.slice(0, 4), 10))
+    }
+    for (const contract of property.contracts) {
+      if (contract.category !== category) continue
+      ys.add(Number.parseInt(contract.startDate.slice(0, 4), 10))
+      ys.add(Number.parseInt(contract.endDate.slice(0, 4), 10))
+    }
+    const arr = Array.from(ys).sort((a, b) => b - a)
+    return arr.length ? arr : [new Date().getFullYear()]
+  }, [catCosts, property.contracts, category])
+
+  const [planYear, setPlanYear] = useState(() => planYears[0] ?? new Date().getFullYear())
+
+  useEffect(() => {
+    setPlanYear((y) => (planYears.includes(y) ? y : planYears[0] ?? new Date().getFullYear()))
+  }, [category, property.id, planYears])
+
+  const planFrom = `${planYear}-01-01`
+  const planTo = `${planYear}-12-31`
+  const sollJahr = getContractBudgetForPeriod(property, planFrom, planTo, category)
+  const istJahr = isIncomeCategory
+    ? getActualIncomeForCategoryForPeriod(property, planFrom, planTo, category)
+    : getActualExpenseForCategoryForPeriod(property, planFrom, planTo, category)
+  const abweichungJahr = istJahr - sollJahr
+  const pctJahr =
+    sollJahr !== 0
+      ? Math.round((abweichungJahr / sollJahr) * 1000) / 10
+      : istJahr !== 0
+        ? 100
+        : 0
+
+  const verbrauchSollJahr = hasMeter
+    ? getContractConsumptionBasisForPeriod(property, planFrom, planTo, category)
+    : null
+  const verbrauchIstJahr = hasMeter
+    ? getMeterConsumptionForCalendarYear(property, category, planYear)
+    : 0
+  const verbrauchDiffJahr =
+    verbrauchSollJahr != null ? verbrauchIstJahr - verbrauchSollJahr : null
+  const verbrauchPctJahr =
+    verbrauchSollJahr != null && verbrauchSollJahr !== 0
+      ? Math.round(((verbrauchDiffJahr ?? 0) / verbrauchSollJahr) * 1000) / 10
+      : null
 
   const statusColors = {
     normal: "bg-success/10 text-success",
@@ -291,6 +349,140 @@ export function CategoryDetailView({ property, category, onBack }: CategoryDetai
           </Card>
         )}
       </div>
+
+      <Card>
+        <CardHeader className="space-y-1 p-3 pb-2 sm:p-4 sm:pb-2">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <CardTitle className="text-sm font-semibold">Vertrag vs. Ist</CardTitle>
+            <div className="flex items-center gap-2">
+              <Label htmlFor="cat-plan-year" className="text-xs text-muted-foreground">
+                Jahr
+              </Label>
+              <select
+                id="cat-plan-year"
+                className="rounded-md border border-input bg-background px-2 py-1 text-sm"
+                value={planYear}
+                onChange={(e) => setPlanYear(Number.parseInt(e.target.value, 10))}
+              >
+                {planYears.map((y) => (
+                  <option key={y} value={y}>
+                    {y}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            <strong>Soll</strong> aus Vertraegen fuer {catLabel} im Jahr {planYear},{" "}
+            <strong>Ist</strong> aus{" "}
+            {isIncomeCategory ? "gebuchten Einnahmen" : "gebuchten Ausgaben"} in diesem Jahr.
+          </p>
+        </CardHeader>
+        <CardContent className="space-y-2 p-3 pt-0 sm:p-4 sm:pt-0">
+          <div className="flex justify-between gap-2 text-sm">
+            <span className="text-muted-foreground">Soll (Vertrag)</span>
+            <span className="shrink-0 font-medium tabular-nums text-foreground">
+              {formatCurrency(sollJahr)}
+            </span>
+          </div>
+          <div className="flex justify-between gap-2 text-sm">
+            <span className="text-muted-foreground">
+              Ist ({isIncomeCategory ? "Einnahmen" : "Einträge"})
+            </span>
+            <span
+              className={`shrink-0 font-medium tabular-nums ${isIncomeCategory ? "text-success" : "text-foreground"}`}
+            >
+              {isIncomeCategory ? "+" : ""}
+              {formatCurrency(istJahr)}
+            </span>
+          </div>
+          <div className="flex justify-between gap-2 border-t border-border pt-2 text-sm">
+            <span className="text-muted-foreground">Abweichung</span>
+            <span
+              className={`shrink-0 font-semibold tabular-nums ${
+                abweichungJahr === 0
+                  ? "text-foreground"
+                  : isIncomeCategory
+                    ? abweichungJahr >= 0
+                      ? "text-success"
+                      : "text-destructive"
+                    : abweichungJahr <= 0
+                      ? "text-success"
+                      : "text-destructive"
+              }`}
+            >
+              {abweichungJahr > 0 ? "+" : ""}
+              {formatCurrency(abweichungJahr)}
+            </span>
+          </div>
+          {sollJahr !== 0 && (
+            <p className="text-right text-xs text-muted-foreground">
+              {pctJahr > 0 ? "+" : ""}
+              {pctJahr}% relativ zu Soll
+            </p>
+          )}
+          {sollJahr === 0 && istJahr === 0 && (
+            <p className="text-xs text-muted-foreground">
+              Kein Vertrags-Soll und keine Buchungen in diesem Jahr fuer diese Kategorie.
+            </p>
+          )}
+
+          {hasMeter && (
+            <>
+              <div className="border-t border-border pt-3">
+                <p className="mb-2 text-xs font-medium text-foreground">
+                  Verbrauch im Jahr {planYear} ({unit})
+                </p>
+                <div className="flex justify-between gap-2 text-sm">
+                  <span className="text-muted-foreground">Soll (Vertrag, anteilig)</span>
+                  <span className="shrink-0 font-medium tabular-nums text-foreground">
+                    {verbrauchSollJahr != null
+                      ? `${formatConsumptionAmount(verbrauchSollJahr)} ${unit}`
+                      : "–"}
+                  </span>
+                </div>
+                <div className="mt-2 flex justify-between gap-2 text-sm">
+                  <span className="text-muted-foreground">Ist (Zaehler im Jahr)</span>
+                  <span className="shrink-0 font-medium tabular-nums text-foreground">
+                    {formatConsumptionAmount(verbrauchIstJahr)} {unit}
+                  </span>
+                </div>
+                {verbrauchDiffJahr != null && (
+                  <>
+                    <div className="mt-2 flex justify-between gap-2 border-t border-border pt-2 text-sm">
+                      <span className="text-muted-foreground">Abweichung</span>
+                      <span
+                        className={`shrink-0 font-semibold tabular-nums ${
+                          verbrauchDiffJahr === 0
+                            ? "text-foreground"
+                            : verbrauchDiffJahr <= 0
+                              ? "text-success"
+                              : "text-destructive"
+                        }`}
+                      >
+                        {verbrauchDiffJahr > 0 ? "+" : ""}
+                        {formatConsumptionAmount(verbrauchDiffJahr)} {unit}
+                      </span>
+                    </div>
+                    {verbrauchPctJahr != null && (
+                      <p className="mt-1 text-right text-xs text-muted-foreground">
+                        {verbrauchPctJahr > 0 ? "+" : ""}
+                        {verbrauchPctJahr}% relativ zu Soll-Verbrauch
+                      </p>
+                    )}
+                  </>
+                )}
+                {verbrauchSollJahr == null && (
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    Kein Jahresverbrauch im Vertrag hinterlegt (Strom/Gas/Wasser beim Anlegen oder in
+                    den Vertragsdaten ergaenzen).
+                  </p>
+                )}
+              </div>
+            </>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Tabs */}
       <Tabs defaultValue="data" className="flex flex-col gap-3">

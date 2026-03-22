@@ -17,29 +17,18 @@ import {
   SheetTitle,
   SheetDescription,
 } from "@/components/ui/sheet"
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { useAppStore } from "@/lib/store"
-import type { CostCategory, Contract } from "@/lib/types"
-import { CATEGORY_LABELS, CATEGORIES_WITH_CONTRACT } from "@/lib/types"
-import { daysUntilCancellationDeadline, formatCurrency } from "@/lib/helpers"
+import { AddContractDialog } from "@/components/add-contract-dialog"
+import { ContractPdfControls } from "@/components/contract-pdf-controls"
+import { mergeCategoryDefinitions, getCategoryLabel, getCategoryUnit } from "@/lib/categories"
+import {
+  daysUntilCancellationDeadline,
+  formatCurrency,
+  formatConsumptionAmount,
+} from "@/lib/helpers"
 import { toast } from "sonner"
 
 interface ContractAlertsProps {
@@ -48,7 +37,8 @@ interface ContractAlertsProps {
 }
 
 export function ContractAlerts({ open, onOpenChange }: ContractAlertsProps) {
-  const { properties, addContract, updateContract } = useAppStore()
+  const { properties, updateContract, categoryDefinitions } = useAppStore()
+  const catDefs = mergeCategoryDefinitions(categoryDefinitions)
   const [showAddContract, setShowAddContract] = useState(false)
 
   const allContracts = properties.flatMap((p) =>
@@ -125,6 +115,7 @@ export function ContractAlerts({ open, onOpenChange }: ContractAlertsProps) {
 
             {sorted.map((contract) => {
               const style = getUrgencyStyle(contract.daysLeft)
+              const consUnit = getCategoryUnit(contract.category, catDefs)
               return (
                 <Card
                   key={contract.id}
@@ -147,7 +138,7 @@ export function ContractAlerts({ open, onOpenChange }: ContractAlertsProps) {
                             {contract.provider}
                           </p>
                           <p className="text-xs text-muted-foreground">
-                            {CATEGORY_LABELS[contract.category]} - {contract.propertyName}
+                            {getCategoryLabel(contract.category, catDefs)} - {contract.propertyName}
                           </p>
                         </div>
                       </div>
@@ -157,9 +148,15 @@ export function ContractAlerts({ open, onOpenChange }: ContractAlertsProps) {
                     </div>
                     <div className="flex flex-col gap-1 text-xs text-muted-foreground">
                       <div className="flex justify-between">
-                        <span>Monatlich</span>
+                        <span>
+                          {contract.billingCycle === "monthly" ? "Monatlich" : "Jaehrlich (Budget)"}
+                        </span>
                         <span className="font-medium text-foreground">
-                          {formatCurrency(contract.monthlyCost)}
+                          {contract.billingCycle === "monthly"
+                            ? formatCurrency(contract.monthlyCost)
+                            : formatCurrency(
+                                contract.annualAmount ?? contract.monthlyCost * 12
+                              )}
                         </span>
                       </div>
                       <div className="flex justify-between">
@@ -174,6 +171,14 @@ export function ContractAlerts({ open, onOpenChange }: ContractAlertsProps) {
                         <span>Kuendigungsfrist</span>
                         <span>{contract.cancellationPeriodMonths} Monate</span>
                       </div>
+                      {contract.annualConsumptionBasis != null && consUnit && (
+                        <div className="flex justify-between gap-2">
+                          <span>Jahresverbrauch (Vertrag)</span>
+                          <span className="shrink-0 font-medium text-foreground">
+                            {formatConsumptionAmount(contract.annualConsumptionBasis)} {consUnit}/J
+                          </span>
+                        </div>
+                      )}
                     </div>
                     {contract.daysLeft > 0 &&
                       contract.daysLeft <= 90 &&
@@ -198,6 +203,13 @@ export function ContractAlerts({ open, onOpenChange }: ContractAlertsProps) {
                         Kuendigung vermerkt
                       </div>
                     )}
+                    <ContractPdfControls
+                      propertyId={contract.propertyId}
+                      contractId={contract.id}
+                      fileName={contract.contractPdfFileName}
+                      dataUrl={contract.contractPdfDataUrl}
+                      updateContract={updateContract}
+                    />
                   </CardContent>
                 </Card>
               )
@@ -206,163 +218,7 @@ export function ContractAlerts({ open, onOpenChange }: ContractAlertsProps) {
         </SheetContent>
       </Sheet>
 
-      <AddContractDialog
-        open={showAddContract}
-        onOpenChange={setShowAddContract}
-      />
+      <AddContractDialog open={showAddContract} onOpenChange={setShowAddContract} />
     </>
-  )
-}
-
-function AddContractDialog({
-  open,
-  onOpenChange,
-}: {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-}) {
-  const { properties, addContract } = useAppStore()
-  const [propertyId, setPropertyId] = useState(properties[0]?.id || "")
-  const [category, setCategory] = useState<CostCategory>("strom")
-  const [provider, setProvider] = useState("")
-  const [monthlyCost, setMonthlyCost] = useState("")
-  const [startDate, setStartDate] = useState("")
-  const [endDate, setEndDate] = useState("")
-  const [cancelMonths, setCancelMonths] = useState("3")
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!propertyId || !provider || !monthlyCost || !startDate || !endDate) return
-
-    const contract: Contract = {
-      id: `contract-${Date.now()}`,
-      propertyId,
-      category,
-      provider,
-      monthlyCost: Number.parseFloat(monthlyCost),
-      startDate,
-      endDate,
-      cancellationPeriodMonths: Number.parseInt(cancelMonths),
-      notified: false,
-    }
-
-    addContract(contract)
-    toast.success("Vertrag hinzugefuegt")
-    setProvider("")
-    setMonthlyCost("")
-    setStartDate("")
-    setEndDate("")
-    onOpenChange(false)
-  }
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Neuen Vertrag hinzufuegen</DialogTitle>
-          <DialogDescription>
-            Erfassen Sie die Vertragsdaten inkl. Laufzeit und Kuendigungsfrist.
-          </DialogDescription>
-        </DialogHeader>
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <div className="flex flex-col gap-2">
-            <Label>Immobilie</Label>
-            <Select value={propertyId} onValueChange={setPropertyId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Immobilie waehlen" />
-              </SelectTrigger>
-              <SelectContent>
-                {properties.map((p) => (
-                  <SelectItem key={p.id} value={p.id}>
-                    {p.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <Label>Kategorie</Label>
-            <Select
-              value={category}
-              onValueChange={(v) => setCategory(v as CostCategory)}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {CATEGORIES_WITH_CONTRACT.map((cat) => (
-                  <SelectItem key={cat} value={cat}>
-                    {CATEGORY_LABELS[cat]}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="contract-provider">Anbieter</Label>
-            <Input
-              id="contract-provider"
-              placeholder="z.B. Vattenfall"
-              value={provider}
-              onChange={(e) => setProvider(e.target.value)}
-              required
-            />
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="contract-cost">Monatliche Kosten (EUR)</Label>
-            <Input
-              id="contract-cost"
-              type="number"
-              step="0.01"
-              placeholder="0.00"
-              value={monthlyCost}
-              onChange={(e) => setMonthlyCost(e.target.value)}
-              required
-            />
-          </div>
-
-          <div className="flex gap-4">
-            <div className="flex flex-1 flex-col gap-2">
-              <Label htmlFor="contract-start">Vertragsbeginn</Label>
-              <Input
-                id="contract-start"
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                required
-              />
-            </div>
-            <div className="flex flex-1 flex-col gap-2">
-              <Label htmlFor="contract-end">Vertragsende</Label>
-              <Input
-                id="contract-end"
-                type="date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                required
-              />
-            </div>
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="cancel-months">Kuendigungsfrist (Monate)</Label>
-            <Input
-              id="cancel-months"
-              type="number"
-              min="0"
-              value={cancelMonths}
-              onChange={(e) => setCancelMonths(e.target.value)}
-            />
-          </div>
-
-          <Button type="submit" className="w-full">
-            Vertrag speichern
-          </Button>
-        </form>
-      </DialogContent>
-    </Dialog>
   )
 }

@@ -23,7 +23,13 @@ import {
 import { Switch } from "@/components/ui/switch"
 import { useAppStore } from "@/lib/store"
 import type { CostCategory, CostEntry } from "@/lib/types"
-import { CATEGORY_LABELS, CATEGORIES_WITH_METER, CATEGORY_UNITS } from "@/lib/types"
+import {
+  mergeCategoryDefinitions,
+  getCategoryLabel,
+  categorySupportsMeter,
+  getCategoryUnit,
+  orderedCategoryIds,
+} from "@/lib/categories"
 import { toast } from "sonner"
 
 interface AddCostDialogProps {
@@ -33,7 +39,8 @@ interface AddCostDialogProps {
 }
 
 export function AddCostDialog({ propertyId, open, onOpenChange }: AddCostDialogProps) {
-  const { addCostEntry } = useAppStore()
+  const { addCostEntry, categoryDefinitions } = useAppStore()
+  const catDefs = mergeCategoryDefinitions(categoryDefinitions)
   const [category, setCategory] = useState<CostCategory>("strom")
   const [label, setLabel] = useState("")
   const [amount, setAmount] = useState("")
@@ -42,8 +49,8 @@ export function AddCostDialog({ propertyId, open, onOpenChange }: AddCostDialogP
   const [meterValue, setMeterValue] = useState("")
   const [note, setNote] = useState("")
 
-  const hasMeter = CATEGORIES_WITH_METER.includes(category)
-  const unit = CATEGORY_UNITS[category]
+  const hasMeter = categorySupportsMeter(category, catDefs)
+  const unit = getCategoryUnit(category, catDefs)
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -53,7 +60,7 @@ export function AddCostDialog({ propertyId, open, onOpenChange }: AddCostDialogP
       id: `cost-${Date.now()}`,
       propertyId,
       category,
-      label: label || CATEGORY_LABELS[category],
+      label: label || getCategoryLabel(category, catDefs),
       amount: Number.parseFloat(amount),
       date,
       isIncome,
@@ -98,9 +105,9 @@ export function AddCostDialog({ propertyId, open, onOpenChange }: AddCostDialogP
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {Object.entries(CATEGORY_LABELS).map(([key, label]) => (
-                  <SelectItem key={key} value={key}>
-                    {label}
+                {orderedCategoryIds(catDefs).map((id) => (
+                  <SelectItem key={id} value={id}>
+                    {getCategoryLabel(id, catDefs)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -111,7 +118,7 @@ export function AddCostDialog({ propertyId, open, onOpenChange }: AddCostDialogP
             <Label htmlFor="cost-label">Bezeichnung</Label>
             <Input
               id="cost-label"
-              placeholder={CATEGORY_LABELS[category]}
+              placeholder={getCategoryLabel(category, catDefs)}
               value={label}
               onChange={(e) => setLabel(e.target.value)}
             />

@@ -50,6 +50,7 @@ export function AddPropertyDialog({ open, onOpenChange }: AddPropertyDialogProps
       imageUrl: preview || "/images/property1.jpg",
       costs: [],
       contracts: [],
+      propertyDocuments: [],
       thresholds: [
         { category: "strom", warningValue: 3500, criticalValue: 4500, unit: "kWh" },
         { category: "gas", warningValue: 1200, criticalValue: 1600, unit: "m\u00B3" },

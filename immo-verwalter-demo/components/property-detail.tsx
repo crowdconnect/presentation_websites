@@ -31,14 +31,20 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import type { Property, CostCategory, ScannedDocument } from "@/lib/types"
-import { CATEGORY_LABELS, CATEGORIES_WITH_METER, CATEGORY_UNITS } from "@/lib/types"
+import {
+  mergeCategoryDefinitions,
+  getCategoryLabel,
+  categorySupportsMeter,
+  getCategoryUnit,
+  orderedCategoryIds,
+} from "@/lib/categories"
 import {
   getMonthlyTotalCost,
   getMonthlyTotalIncome,
   getAnnualCostTotal,
   getAnnualIncomeTotal,
   getMonthlyAverage,
-  getProjectedAnnualCost,
+  getTrendBasedAnnualProjection,
   getAnnualConsumption,
   getConsumptionStatus,
   formatCurrency,
@@ -49,9 +55,13 @@ import { CostCharts } from "@/components/cost-charts"
 import { AddCostDialog } from "@/components/add-cost-dialog"
 import { ThresholdSettings } from "@/components/threshold-settings"
 import { CategoryDetailView } from "@/components/category-detail-view"
+import { PropertyDocumentsPanel } from "@/components/property-documents-panel"
+import { PlanVsIstPanel } from "@/components/plan-vs-ist-panel"
+import { PropertyContractsPanel } from "@/components/property-contracts-panel"
+import { AddCategoryDialog } from "@/components/add-category-dialog"
 import { toast } from "sonner"
 
-const categoryIcons: Record<CostCategory, LucideIcon> = {
+const categoryIcons: Record<string, LucideIcon> = {
   strom: Zap,
   gas: Flame,
   wasser: Droplets,
@@ -62,6 +72,10 @@ const categoryIcons: Record<CostCategory, LucideIcon> = {
   reparatur: Wrench,
   miete_einnahme: Banknote,
   sonstige: MoreHorizontal,
+}
+
+function iconForCategory(id: string): LucideIcon {
+  return categoryIcons[id] ?? MoreHorizontal
 }
 
 const statusBg = {
@@ -78,8 +92,10 @@ interface PropertyDetailProps {
 export function PropertyDetail({ property, onBack }: PropertyDetailProps) {
   const [showAddCost, setShowAddCost] = useState(false)
   const [showThresholds, setShowThresholds] = useState(false)
+  const [showAddCategory, setShowAddCategory] = useState(false)
   const [selectedCategory, setSelectedCategory] = useState<CostCategory | null>(null)
-  const { addDocument, documents } = useAppStore()
+  const { addDocument, documents, categoryDefinitions } = useAppStore()
+  const catDefs = mergeCategoryDefinitions(categoryDefinitions)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const cameraInputRef = useRef<HTMLInputElement>(null)
   const [uploadTargetEntryId, setUploadTargetEntryId] = useState<string | null>(null)
@@ -89,9 +105,9 @@ export function PropertyDetail({ property, onBack }: PropertyDetailProps) {
   const annualCost = getAnnualCostTotal(property)
   const annualIncome = getAnnualIncomeTotal(property)
   const monthlyAvg = getMonthlyAverage(property)
-  const projectedAnnual = getProjectedAnnualCost(property)
+  const projectedAnnual = getTrendBasedAnnualProjection(property)
 
-  const categories = Object.keys(CATEGORY_LABELS) as CostCategory[]
+  const categories = orderedCategoryIds(catDefs)
 
   const categorySummary = categories.map((cat) => {
     const catCosts = property.costs.filter((c) => c.category === cat)
@@ -99,12 +115,24 @@ export function PropertyDetail({ property, onBack }: PropertyDetailProps) {
     const totalCost = catCosts.filter((c) => !c.isIncome).reduce((s, c) => s + c.amount, 0)
     const totalIncome = catCosts.filter((c) => c.isIncome).reduce((s, c) => s + c.amount, 0)
     const avgMonthly = monthlyData.length > 0 ? Math.round(totalCost / monthlyData.length) : 0
-    const hasMeter = CATEGORIES_WITH_METER.includes(cat)
+    const hasMeter = categorySupportsMeter(cat, catDefs)
     const consumption = hasMeter ? getAnnualConsumption(property, cat) : 0
     const status = hasMeter ? getConsumptionStatus(property, cat) : "normal"
-    const unit = CATEGORY_UNITS[cat]
-    const Icon = categoryIcons[cat]
-    return { category: cat, label: CATEGORY_LABELS[cat], Icon, totalCost, totalIncome, avgMonthly, hasMeter, consumption, status, unit, entryCount: catCosts.length }
+    const unit = getCategoryUnit(cat, catDefs)
+    const Icon = iconForCategory(cat)
+    return {
+      category: cat,
+      label: getCategoryLabel(cat, catDefs),
+      Icon,
+      totalCost,
+      totalIncome,
+      avgMonthly,
+      hasMeter,
+      consumption,
+      status,
+      unit,
+      entryCount: catCosts.length,
+    }
   }).filter((s) => s.entryCount > 0)
 
   function getDocForEntry(entryId: string): ScannedDocument | undefined {
@@ -168,6 +196,9 @@ export function PropertyDetail({ property, onBack }: PropertyDetailProps) {
           <Button variant="outline" size="sm" onClick={() => setShowThresholds(true)} className="hidden bg-transparent sm:flex">
             Grenzwerte
           </Button>
+          <Button variant="outline" size="sm" onClick={() => setShowAddCategory(true)} className="hidden bg-transparent sm:flex">
+            Kategorie
+          </Button>
           <Button size="sm" onClick={() => setShowAddCost(true)} className="gap-1 text-xs sm:text-sm">
             <Plus className="h-4 w-4" />
             <span className="hidden sm:inline">Eintrag</span>
@@ -207,18 +238,21 @@ export function PropertyDetail({ property, onBack }: PropertyDetailProps) {
             icon={TrendingUp}
           />
           <SummaryCard
-            title="Prognose/J"
+            title="Trend / Jahr"
             value={formatCurrency(projectedAnnual)}
-            subtitle="auf Basis \u00D8"
+            subtitle="aus \u00D8-Monat (nicht Vertrag)"
             icon={TrendingDown}
           />
         </div>
 
         <Tabs defaultValue="overview" className="flex flex-col gap-3">
-          <TabsList className="w-full">
-            <TabsTrigger value="overview" className="flex-1 text-xs sm:text-sm">Kategorien</TabsTrigger>
-            <TabsTrigger value="charts" className="flex-1 text-xs sm:text-sm">Diagramme</TabsTrigger>
-            <TabsTrigger value="entries" className="flex-1 text-xs sm:text-sm">Eintraege</TabsTrigger>
+          <TabsList className="grid h-auto min-h-10 w-full grid-cols-2 gap-1 items-stretch justify-items-stretch sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-6 [&>button]:min-h-9 [&>button]:w-full">
+            <TabsTrigger value="overview" className="text-xs sm:text-sm">Kategorien</TabsTrigger>
+            <TabsTrigger value="charts" className="text-xs sm:text-sm">Diagramme</TabsTrigger>
+            <TabsTrigger value="entries" className="text-xs sm:text-sm">Eintraege</TabsTrigger>
+            <TabsTrigger value="documents" className="text-xs sm:text-sm">Dokumente</TabsTrigger>
+            <TabsTrigger value="plan" className="text-xs sm:text-sm">Plan/Ist</TabsTrigger>
+            <TabsTrigger value="contracts" className="text-xs sm:text-sm">Vertraege</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview">
@@ -282,7 +316,7 @@ export function PropertyDetail({ property, onBack }: PropertyDetailProps) {
                               {formatDateDeterministic(entry.date)}
                             </span>
                             <Badge variant="outline" className="text-[10px]">
-                              {CATEGORY_LABELS[entry.category]}
+                              {getCategoryLabel(entry.category, catDefs)}
                             </Badge>
                             {doc && <FileText className="h-3 w-3 shrink-0 text-primary" />}
                           </div>
@@ -332,6 +366,18 @@ export function PropertyDetail({ property, onBack }: PropertyDetailProps) {
               )}
             </div>
           </TabsContent>
+
+          <TabsContent value="documents">
+            <PropertyDocumentsPanel property={property} />
+          </TabsContent>
+
+          <TabsContent value="plan">
+            <PlanVsIstPanel property={property} />
+          </TabsContent>
+
+          <TabsContent value="contracts">
+            <PropertyContractsPanel property={property} />
+          </TabsContent>
         </Tabs>
         </>
         )}
@@ -339,6 +385,7 @@ export function PropertyDetail({ property, onBack }: PropertyDetailProps) {
 
       <AddCostDialog propertyId={property.id} open={showAddCost} onOpenChange={setShowAddCost} />
       <ThresholdSettings property={property} open={showThresholds} onOpenChange={setShowThresholds} />
+      <AddCategoryDialog open={showAddCategory} onOpenChange={setShowAddCategory} />
     </div>
   )
 }

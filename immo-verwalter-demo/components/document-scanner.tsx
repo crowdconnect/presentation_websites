@@ -27,10 +27,12 @@ import { Switch } from "@/components/ui/switch"
 import { useAppStore } from "@/lib/store"
 import type { CostCategory, CostEntry, ScannedDocument } from "@/lib/types"
 import {
-  CATEGORY_LABELS,
-  CATEGORIES_WITH_METER,
-  CATEGORY_UNITS,
-} from "@/lib/types"
+  mergeCategoryDefinitions,
+  getCategoryLabel,
+  categorySupportsMeter,
+  getCategoryUnit,
+  orderedCategoryIds,
+} from "@/lib/categories"
 import { suggestCategory } from "@/lib/helpers"
 import { toast } from "sonner"
 
@@ -42,7 +44,9 @@ interface DocumentScannerProps {
 type Step = "upload" | "review" | "assign"
 
 export function DocumentScanner({ open, onOpenChange }: DocumentScannerProps) {
-  const { properties, addCostEntry, addDocument, updateDocument } = useAppStore()
+  const { properties, addCostEntry, addDocument, updateDocument, categoryDefinitions } =
+    useAppStore()
+  const catDefs = mergeCategoryDefinitions(categoryDefinitions)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const cameraInputRef = useRef<HTMLInputElement>(null)
 
@@ -61,8 +65,8 @@ export function DocumentScanner({ open, onOpenChange }: DocumentScannerProps) {
   const [isIncome, setIsIncome] = useState(false)
   const [meterValue, setMeterValue] = useState("")
 
-  const hasMeter = CATEGORIES_WITH_METER.includes(category)
-  const unit = CATEGORY_UNITS[category]
+  const hasMeter = categorySupportsMeter(category, catDefs)
+  const unit = getCategoryUnit(category, catDefs)
 
   const handleFile = (file: File) => {
     const reader = new FileReader()
@@ -84,7 +88,7 @@ export function DocumentScanner({ open, onOpenChange }: DocumentScannerProps) {
       setScannedDoc(doc)
       if (suggested) {
         setCategory(suggested)
-        setLabel(CATEGORY_LABELS[suggested])
+        setLabel(getCategoryLabel(suggested, catDefs))
       }
       if (doc.suggestedPropertyId) {
         setSelectedPropertyId(doc.suggestedPropertyId)
@@ -113,7 +117,7 @@ export function DocumentScanner({ open, onOpenChange }: DocumentScannerProps) {
       id: `cost-${Date.now()}`,
       propertyId: selectedPropertyId,
       category,
-      label: label || CATEGORY_LABELS[category],
+      label: label || getCategoryLabel(category, catDefs),
       amount: Number.parseFloat(amount),
       date,
       isIncome,
@@ -256,7 +260,7 @@ export function DocumentScanner({ open, onOpenChange }: DocumentScannerProps) {
                     <span className="text-sm text-muted-foreground">Kategorie</span>
                     {scannedDoc.suggestedCategory ? (
                       <Badge variant="outline" className="bg-primary/10 text-primary">
-                        {CATEGORY_LABELS[scannedDoc.suggestedCategory]}
+                        {getCategoryLabel(scannedDoc.suggestedCategory, catDefs)}
                       </Badge>
                     ) : (
                       <Badge variant="outline" className="text-muted-foreground">
@@ -321,16 +325,16 @@ export function DocumentScanner({ open, onOpenChange }: DocumentScannerProps) {
                 value={category}
                 onValueChange={(v) => {
                   setCategory(v as CostCategory)
-                  setLabel(CATEGORY_LABELS[v as CostCategory])
+                  setLabel(getCategoryLabel(v as CostCategory, catDefs))
                 }}
               >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {Object.entries(CATEGORY_LABELS).map(([key, lbl]) => (
-                    <SelectItem key={key} value={key}>
-                      {lbl}
+                  {orderedCategoryIds(catDefs).map((id) => (
+                    <SelectItem key={id} value={id}>
+                      {getCategoryLabel(id, catDefs)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -343,7 +347,7 @@ export function DocumentScanner({ open, onOpenChange }: DocumentScannerProps) {
                 id="scan-label"
                 value={label}
                 onChange={(e) => setLabel(e.target.value)}
-                placeholder={CATEGORY_LABELS[category]}
+                placeholder={getCategoryLabel(category, catDefs)}
               />
             </div>
 
